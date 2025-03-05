@@ -13,6 +13,7 @@ export default tseslint.config(
   eslintPluginPrettierRecommended,
   {
     languageOptions: {
+      parse: tseslint.parser,
       globals: {
         ...globals.node,
         ...globals.jest,
