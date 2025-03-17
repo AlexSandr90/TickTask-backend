@@ -5,7 +5,7 @@ dotenv.config();
 export const TOKEN_CONFIG = {
   imports: [],
   secret: process.env.SECRET,
-  signOptions: { expiresIn: process.env.EXPIRY_JWT },
+  signOptions: { expiresIn: process.env.EXPIRE_JWT },
   global: true,
   inject: [],
 };
