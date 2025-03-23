@@ -1,33 +1,17 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
-
-interface UserWithoutPassword {
-  id: string;
-  username: string | null;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastLogin: Date | null;
-  theme: string;
-  notifications: boolean;
-}
+import { UserWithoutPassword } from '../users/interfaces/user.interface';
 
 @Injectable()
 export class AuthService {
   constructor(private readonly usersService: UsersService) {}
 
-  async register(
-    email: string,
-    password: string,
-  ): Promise<any> {
+  async register(email: string, password: string): Promise<any> {
     return this.usersService.createUser(email, password);
   }
 
-  async login(
-    email: string,
-    password: string,
-  ): Promise<UserWithoutPassword | null> {
+  async login(email: string, password: string): Promise<UserWithoutPassword> {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
@@ -41,7 +25,7 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      return null;
+      throw new UnauthorizedException('Invalid user credentials');
     }
 
     const { passwordHash: _, ...userWithoutPassword } = user;
