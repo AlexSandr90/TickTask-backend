@@ -18,18 +18,17 @@ export class AuthService {
   constructor(private readonly usersService: UsersService) {}
 
   async register(
-    username: string,
     email: string,
     password: string,
   ): Promise<any> {
-    return this.usersService.createUser(username, email, password);
+    return this.usersService.createUser(email, password);
   }
 
   async login(
-    username: string,
+    email: string,
     password: string,
   ): Promise<UserWithoutPassword | null> {
-    const user = await this.usersService.findByUserName(username);
+    const user = await this.usersService.findByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException('User not found');

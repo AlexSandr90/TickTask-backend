@@ -7,7 +7,7 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string) {
-    return await this.prisma.user.findMany({
+    return await this.prisma.user.findFirst({
       where: { email },
     });
   }
@@ -43,7 +43,6 @@ export class UsersService {
   }
 
   async createUser(
-    username: string,
     email: string,
     password: string,
   ): Promise<any> {
@@ -51,7 +50,6 @@ export class UsersService {
 
     const newUser = await this.prisma.user.create({
       data: {
-        username,
         email,
         passwordHash,
       },
