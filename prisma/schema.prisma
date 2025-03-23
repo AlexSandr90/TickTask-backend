@@ -13,7 +13,7 @@ model User {
   email         String    @unique
   passwordHash  String?
   createdAt     DateTime  @default(now())
-  updateAt      DateTime  @updatedAt
+  updatedAt     DateTime  @updatedAt
   lastLogin     DateTime?
   theme         String    @default("light")
   notifications Boolean   @default(true)

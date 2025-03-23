@@ -7,7 +7,7 @@ interface UserWithoutPassword {
   username: string | null;
   email: string;
   createdAt: Date;
-  updateAt: Date;
+  updatedAt: Date;
   lastLogin: Date | null;
   theme: string;
   notifications: boolean;
