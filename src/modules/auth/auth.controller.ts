@@ -1,30 +1,71 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { UserDto } from './dto/user.dto';
+import { UserWithoutPassword } from '../users/interfaces/user.interface';
+import { UserDto } from './dto/create-user.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
-  @Post('/registration')
-  @ApiOperation({ summary: 'Create a new user' })
-  @ApiResponse({ status: 201, description: 'Successfully registered' })
-  @ApiResponse({ status: 400, description: 'Невірні дані' })
-  async createUser(@Body() userData: UserDto): Promise<any> {
+  @Post('register')
+  @ApiOperation({ summary: 'Реєстрація нового користувача' })
+  @ApiResponse({
+    status: 201,
+    description: 'Користувач успішно зареєстрований',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Користувач з таким email вже існує або паролі не співпадають',
+  })
+  async register(@Body() userDto: UserDto): Promise<UserWithoutPassword> {
+    const { username, email, password, confirmPassword } = userDto;
+
+    if (password !== confirmPassword) {
+      console.warn('⚠️ Пароли не совпадают');
+    }
+
     return this.authService.register(
-      userData.email,
-      userData.password,
+      username,
+      email,
+      password,
+      confirmPassword,
     );
   }
 
-  @Post('/login')
-  @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'Successfully logged in' })
-  @ApiResponse({ status: 400, description: 'Something went wrong' })
-  async login(
-    @Body() userData: UserDto,
-  ): Promise<any> {
-    return this.authService.login(userData.email, userData.password);
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Авторизація користувача' })
+  @ApiResponse({ status: 200, description: 'Успішний вхід' })
+  @ApiResponse({ status: 401, description: 'Неправильний email або пароль' })
+  async login(@Body() loginDto: LoginDto) {
+    return await this.authService.login(loginDto.email, loginDto.password); // возвращает access_token и refresh_token
+  }
+
+  @Post('refresh/:userId')
+  @ApiOperation({ summary: 'Оновлення токену' })
+  @ApiResponse({ status: 200, description: 'Токен оновлено' })
+  @ApiResponse({ status: 401, description: 'Недійсний токен' })
+  async refreshToken(
+    @Param('userId') userId: string,
+    @Body('refreshToken') refreshToken: string,
+  ): Promise<{ access_token: string }> {
+    return this.authService.refreshToken(userId, refreshToken);
+  }
+
+  @Post('logout/:userId')
+  @ApiOperation({ summary: 'Вихід користувача' })
+  @ApiResponse({ status: 200, description: 'Користувач успішно вийшов' })
+  async logout(@Param('userId') userId: string): Promise<void> {
+    return this.authService.logout(userId);
   }
 }
+

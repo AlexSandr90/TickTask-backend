@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { APP_CONFIG } from '../../../configurations/app.config';
+import { APP_CONFIG } from '../../../configurations/app.config'; // Это ваша конфигурация
 
 @Injectable()
-// @ts-ignore
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     if (!APP_CONFIG.secretJWT) {
@@ -14,11 +13,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: APP_CONFIG.secretJWT,
+      secretOrKey: APP_CONFIG.secretJWT, // Использование вашего конфигурационного ключа
     });
   }
 
-  static async validate(payload: any): Promise<any> {
-    return payload;
+  async validate(payload: any): Promise<any> {
+    // Возвращаем данные из payload, которые можно использовать в других частях приложения
+    return { userId: payload.sub, email: payload.email }; // например, вы можете возвращать ID и email пользователя
   }
 }
