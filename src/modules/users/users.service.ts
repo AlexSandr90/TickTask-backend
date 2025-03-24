@@ -7,9 +7,14 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
     if (!user) throw new NotFoundException('Пользователь не найден');
-    return user;
+
+    const { passwordHash, ...userData } = user;
+    return userData;
   }
 
   async findByEmail(email: string) {
