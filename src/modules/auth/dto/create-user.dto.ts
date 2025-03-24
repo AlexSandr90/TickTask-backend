@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Match } from '../../../validators/match.decorator';
 
@@ -33,5 +33,9 @@ export class UserDto {
   @IsNotEmpty({ message: 'Повторення пароля обов’язкове' })
   @Match('password', { message: 'Паролі мають збігатися' }) // Тут применяем кастомный декоратор
   confirmPassword: string;
+
+  @IsOptional()
+  @IsBoolean({ message: 'Поле повинно бути типу булеве' })
+  isActive?: boolean; // Необязательное поле для статуса активации
 
 }

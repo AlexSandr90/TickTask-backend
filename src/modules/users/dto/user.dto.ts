@@ -16,4 +16,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   notifications?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
