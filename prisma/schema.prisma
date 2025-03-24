@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   id            String    @id @default(uuid())
-  username      String?
+  username      String
   email         String    @unique
   passwordHash  String?
   createdAt     DateTime  @default(now())
@@ -17,4 +17,5 @@ model User {
   lastLogin     DateTime?
   theme         String    @default("light")
   notifications Boolean   @default(true)
+  refreshToken  String?
 }

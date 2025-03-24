@@ -1,61 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    return user;
+  }
+
   async findByEmail(email: string) {
-    return await this.prisma.user.findFirst({
+    return this.prisma.user.findUnique({
       where: { email },
     });
   }
 
-  async findById(id: string) {
-    return await this.prisma.user.findUnique({
-      where: { id },
-    });
-  }
-
-  async findByUserName(username: string) {
-    return await this.prisma.user.findFirst({
-      where: { username },
-    });
-  }
-
-  async updateUser(id: string, username: string, password: string) {
+  async findById(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id },
+      where: { id: userId },
     });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    return user;
+  }
 
-    if (!user) {
-      return null;
-    }
-
-    return await this.prisma.user.update({
-      where: { id },
+  async createUser(username: string, email: string, passwordHash: string) {
+    return this.prisma.user.create({
       data: {
         username,
-        passwordHash: password,
-      },
-    });
-  }
-
-  async createUser(
-    email: string,
-    password: string,
-  ): Promise<any> {
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const newUser = await this.prisma.user.create({
-      data: {
         email,
         passwordHash,
       },
     });
+  }
 
-    const { passwordHash: _, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+  async update(id: string, data: UpdateUserDto) {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data,
+    });
+    if (!user) throw new NotFoundException('Не удалось обновить пользователя');
+    return user;
+  }
+
+  async remove(id: string) {
+    const user = await this.prisma.user.delete({ where: { id } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    return { message: 'Пользователь успешно удалён' };
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken },
+    });
   }
 }
