@@ -58,13 +58,26 @@ export class AuthService {
 
 
   async refreshToken(userId: string, refreshToken: string): Promise<{ access_token: string }> {
+    console.log('🔹 Начало обновления токена');
+    console.log('👉 userId:', userId);
+    console.log('👉 refreshToken из запроса:', refreshToken);
+
     const user = await this.usersService.findById(userId);
+
+    console.log('🔹 Найден пользователь:', user ? user.id : 'не найден');
+    console.log('👉 refreshToken из базы:', user?.refreshToken);
+
     if (!user || user.refreshToken !== refreshToken) {
+      console.error('❌ Недействительный токен или пользователь не найден');
       throw new UnauthorizedException('Недействительный токен');
     }
 
+    console.log('✅ Токен прошёл проверку, генерируем новый access_token');
     const payload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload);
+
+    console.log('✅ Новый access_token сгенерирован:', accessToken);
+
     return { access_token: accessToken };
   }
 

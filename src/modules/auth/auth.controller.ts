@@ -56,11 +56,10 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Недійсний токен' })
   async refreshToken(
     @Param('userId') userId: string,
-    @Body('refreshToken') refreshToken: string,
+    @Body('refresh_token') refreshToken: string, // Теперь ждёт именно refresh_token
   ): Promise<{ access_token: string }> {
     return this.authService.refreshToken(userId, refreshToken);
   }
-
   @Post('logout/:userId')
   @ApiOperation({ summary: 'Вихід користувача' })
   @ApiResponse({ status: 200, description: 'Користувач успішно вийшов' })
