@@ -1,10 +1,10 @@
 import { Resend } from 'resend';
 
-const resend = new Resend('emailApiKey'); // Убедись, что заменил на свой ключ
+const resend = new Resend('re_hnQVNEit_Mw3jKozaQMGGqMz4J5hVum2C'); // Убедись, что заменил на свой ключ
 
-async function sendVerificationEmail(to: string, subject: string, text: string) {
+export async function sendVerificationEmail(to: string, subject: string, text: string) {
   const response = await resend.emails.send({
-    from: 'your-email@example.com',
+    from: 'smailxxxvizde@gmail.com',  // Используем публичный email Resend
     to,
     subject,
     text,

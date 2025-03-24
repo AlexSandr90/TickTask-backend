@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
 
@@ -21,5 +21,15 @@ export class UsersController {
   async deleteUser(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
+  @Post('send-magic-link')
+  async sendMagicLink(@Body('email') email: string) {
+    return this.usersService.sendMagicLink(email);
+  }
 
+  // Эндпоинт для активации пользователя
+  @Post('activate/:token')
+  async activateUser(@Param('token') token: string) {
+    return this.usersService.activateUserByToken(token);
+  }
 }
+
