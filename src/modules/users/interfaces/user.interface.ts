@@ -8,5 +8,4 @@ export interface UserWithoutPassword {
   theme: string;
   notifications: boolean;
   isActive: boolean;
-
 }
