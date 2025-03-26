@@ -12,23 +12,41 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(username: string, email: string, password: string, confirmPassword: string): Promise<UserWithoutPassword> {
+  async register(
+    username: string,
+    email: string,
+    password: string,
+    confirmPassword: string,
+  ): Promise<UserWithoutPassword> {
     if (password !== confirmPassword) {
       throw new UnauthorizedException('Пароли не совпадают');
     }
 
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
-      throw new UnauthorizedException('Пользователь с таким email уже существует');
+      throw new UnauthorizedException(
+        'Пользователь с таким email уже существует',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.usersService.createUser(username, email, hashedPassword);
+    const newUser = await this.usersService.createUser(
+      username,
+      email,
+      hashedPassword,
+    );
     const { passwordHash, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
   }
 
-  async login(email: string, password: string): Promise<{ access_token: string; refresh_token: string, userId: string }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
+    access_token: string;
+    refresh_token: string;
+    userId: string;
+  }> {
     console.log('📩 Получен email:', email);
 
     const user = await this.usersService.findByEmail(email);
@@ -53,11 +71,17 @@ export class AuthService {
 
     await this.usersService.updateRefreshToken(user.id, refreshToken);
 
-    return { access_token: accessToken, refresh_token: refreshToken, userId: user.id };
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      userId: user.id,
+    };
   }
 
-
-  async refreshToken(userId: string, refreshToken: string): Promise<{ access_token: string }> {
+  async refreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<{ access_token: string }> {
     console.log('🔹 Начало обновления токена');
     console.log('👉 userId:', userId);
     console.log('👉 refreshToken из запроса:', refreshToken);
@@ -83,5 +107,11 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.usersService.updateRefreshToken(userId, '');
+  }
+
+  async generateJwt(user: UserWithoutPassword): Promise<any> {
+    const payload = { sub: user.id, email: user.email };
+
+    return this.jwtService.sign(payload);
   }
 }
