@@ -89,3 +89,84 @@ export async function sendVerificationEmail(
     console.error('Error sending email:', error);
   }
 }
+export async function sendPasswordResetEmail(
+  to: string,
+  subject: string,
+  resetLink: string
+) {
+  // Создаём HTML-версию письма для сброса пароля
+  const emailBody = `
+    <html lang="">
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            padding: 20px;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+          }
+          h1 {
+            color: #f44336;
+            text-align: center;
+          }
+          p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 20px 0;
+          }
+          .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+          }
+          .footer {
+            font-size: 12px;
+            text-align: center;
+            color: #999;
+            margin-top: 30px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Password Reset</h1>
+          <p>Hello!</p>
+          <p>We received a request to reset your password. Click the button below to reset your password:</p>
+         <a href="${resetLink}" class="button">Reset Your Password</a>
+          <p>If you didn't request this, you can safely ignore this email.</p>
+          <div class="footer">
+            <p>Best regards,<br/>The Taskcraft Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    const response = await resend.emails.send({
+      from: 'noreply@taskcraft.click', // Отправитель (твое доменное имя)
+      to, // Адрес получателя
+      subject, // Тема письма
+      text: `To reset your password, click on the following link: ${resetLink}`, // Текстовая версия для почтовых клиентов без HTML
+      html: emailBody, // HTML-версия с оформлением
+    });
+
+    console.log('Password reset email sent successfully:', response);
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+  }
+}

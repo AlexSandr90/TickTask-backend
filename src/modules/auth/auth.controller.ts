@@ -84,16 +84,21 @@ export class AuthController {
       const user = req.user as UserWithoutPassword;
 
       if (!user) {
-        return res.status(401).redirect('/login?error=authentication_failed');
+        return res.status(401).json({ error: 'Authentication failed' });
       }
 
       const processedUser = await this.authService.googleLogin(user);
       const token = await this.authService.generateJwt(processedUser);
 
-      res.redirect(`'/dashboard?token=${token}`);
+      // Отправляем токен в ответе вместо редиректа
+      return res.json({
+        message: 'Authentication successful',
+        token: token, // Возвращаем токен
+        user: processedUser, // Опционально: можно вернуть пользователя
+      });
     } catch (error) {
       console.error('Google Callback Error:', error);
-      res.status(500).redirect('/login?error=server_error');
+      return res.status(500).json({ error: 'Server error' });
     }
   }
 }
