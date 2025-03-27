@@ -144,4 +144,26 @@ export class UsersService {
 
     return { message: 'User successfully activated', user: updatedUser };
   }
+
+  async findOrCreateGoogleUser(data: {
+    googleId: string;
+    email: string;
+    username: string;
+  }): Promise<any> {
+    let user = await this.prisma.user.findUnique({
+      where: { googleId: data.googleId },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          googleId: data.googleId,
+          email: data.email,
+          username: data.username,
+        },
+      });
+    }
+
+    return user;
+  }
 }

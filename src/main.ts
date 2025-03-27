@@ -5,12 +5,19 @@ import * as dotenv from 'dotenv';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { configureCors } from './configurations/cors.config';
 import { configureHelmet } from './configurations/helmet.config';
+import { PrismaService } from '../prisma/prisma.service';
+import { GoogleStrategy } from './modules/auth/strategy/google.strategy';
+import * as passport from 'passport';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
+  const prismaService = app.get(PrismaService);
   const port = process.env.PORT || 3000;
+
+  const googleStrategy = new GoogleStrategy(prismaService);
+  passport.use('google', googleStrategy.strategyConfig());
 
   configureCors(app);
   configureHelmet(app);

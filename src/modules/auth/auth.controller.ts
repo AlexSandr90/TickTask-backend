@@ -1,16 +1,21 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import { UserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -60,11 +65,35 @@ export class AuthController {
   ): Promise<{ access_token: string }> {
     return this.authService.refreshToken(userId, refreshToken);
   }
+
   @Post('logout/:userId')
   @ApiOperation({ summary: 'Вихід користувача' })
   @ApiResponse({ status: 200, description: 'Користувач успішно вийшов' })
   async logout(@Param('userId') userId: string): Promise<void> {
     return this.authService.logout(userId);
   }
-}
 
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleLogin(@Req() req, @Res() res) {}
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleLoginCallback(@Req() req, @Res() res) {
+    try {
+      const user = req.user as UserWithoutPassword;
+
+      if (!user) {
+        return res.status(401).redirect('/login?error=authentication_failed');
+      }
+
+      const processedUser = await this.authService.googleLogin(user);
+      const token = await this.authService.generateJwt(processedUser);
+
+      res.redirect(`'/dashboard?token=${token}`);
+    } catch (error) {
+      console.error('Google Callback Error:', error);
+      res.status(500).redirect('/login?error=server_error');
+    }
+  }
+}
