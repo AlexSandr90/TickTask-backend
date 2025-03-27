@@ -7,7 +7,7 @@ import { configureCors } from './configurations/cors.config';
 import { configureHelmet } from './configurations/helmet.config';
 import { PrismaService } from '../prisma/prisma.service';
 import { GoogleStrategy } from './modules/auth/strategy/google.strategy';
-import passport from 'passport';
+import * as passport from 'passport';
 
 dotenv.config();
 
@@ -17,7 +17,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
 
   const googleStrategy = new GoogleStrategy(prismaService);
-  passport.use(googleStrategy.strategyConfig());
+  passport.use('google', googleStrategy.strategyConfig());
+
   configureCors(app);
   configureHelmet(app);
   const config = new DocumentBuilder()

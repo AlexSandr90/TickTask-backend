@@ -77,13 +77,23 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleLogin(@Req() req, @Res() res) {}
 
-  @Get('google/logout')
+  @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req, @Res() res) {
-    const user = req.user as UserWithoutPassword;
+    try {
+      const user = req.user as UserWithoutPassword;
 
-    const token = await this.authService.generateJwt(user);
+      if (!user) {
+        return res.status(401).redirect('/login?error=authentication_failed');
+      }
 
-    res.redirect(`'/dashboard?token=${token}`);
+      const processedUser = await this.authService.googleLogin(user);
+      const token = await this.authService.generateJwt(processedUser);
+
+      res.redirect(`'/dashboard?token=${token}`);
+    } catch (error) {
+      console.error('Google Callback Error:', error);
+      res.status(500).redirect('/login?error=server_error');
+    }
   }
 }

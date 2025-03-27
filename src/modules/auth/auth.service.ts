@@ -4,12 +4,14 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import { randomBytes } from 'crypto';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async register(
@@ -113,5 +115,13 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email };
 
     return this.jwtService.sign(payload);
+  }
+
+  async googleLogin(user: any): Promise<any> {
+    return this.usersService.findOrCreateGoogleUser({
+      googleId: user.googleId,
+      email: user.email,
+      username: user.username,
+    });
   }
 }

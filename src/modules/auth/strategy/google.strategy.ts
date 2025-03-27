@@ -1,9 +1,10 @@
+import { Injectable } from '@nestjs/common';
 import { Strategy } from 'passport-google-oauth20';
 import { PrismaService } from '../../../../prisma/prisma.service';
 
+@Injectable()
 export class GoogleStrategy {
   constructor(private prismaService: PrismaService) {
-    this.prismaService = prismaService;
   }
 
   strategyConfig() {
