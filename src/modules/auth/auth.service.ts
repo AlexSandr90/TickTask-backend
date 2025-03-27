@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException, Response, HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -46,11 +46,8 @@ export class AuthService {
   async login(
     email: string,
     password: string,
-  ): Promise<{
-    access_token: string;
-    refresh_token: string;
-    userId: string;
-  }> {
+    @Response() res: any,
+  ): Promise<void> {  // Возвращаем void, потому что не возвращаем данные в теле
     console.log('📩 Получен email:', email);
 
     const user = await this.usersService.findByEmail(email);
@@ -70,21 +67,32 @@ export class AuthService {
     }
 
     const payload = { email: user.email, sub: user.id };
+    console.log('🎯 Генерация токена с payload:', payload);
     const accessToken = this.jwtService.sign(payload);
+    console.log('🎯 Генерация access token:', accessToken);
     const refreshToken = randomBytes(32).toString('hex');
-
+    console.log('✅ Refresh token сгенерирован:', refreshToken);
     await this.usersService.updateRefreshToken(user.id, refreshToken);
+    console.log('✅ Refresh token сохранен в базе данных');
 
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      userId: user.id,
-    };
+    // Устанавливаем токены в куки
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: false,  // Убедитесь, что в продакшн-режиме будет true
+      maxAge: 3600000, // 1 час
+      path: '/',
+    });
+    console.log('✅ Access token отправлен в куки');
+
+    // Ответ без тела
+    return res.status(HttpStatus.OK).json({ message: 'Успешный вход' });
+
   }
 
   async refreshToken(
     userId: string,
     refreshToken: string,
+    @Response() res: any
   ): Promise<{ access_token: string }> {
     console.log('🔹 Начало обновления токена');
     console.log('👉 userId:', userId);
@@ -103,21 +111,29 @@ export class AuthService {
     console.log('✅ Токен прошёл проверку, генерируем новый access_token');
     const payload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload);
-
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: false,   // включаем для HTTPS (если в продакшене)
+      maxAge: 3600000,  // время жизни куки (1 час)
+      sameSite: 'None', // Это необходимо для кросс-доменных запросов
+    });
     console.log('✅ Новый access_token сгенерирован:', accessToken);
 
     return { access_token: accessToken };
   }
 
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string,  @Response() res: any): Promise<void> {
     await this.usersService.updateRefreshToken(userId, '');
+    res.clearCookie('access_token');
   }
 
   async generateJwt(user: UserWithoutPassword): Promise<any> {
     const payload = { sub: user.id, email: user.email };
 
+
     return this.jwtService.sign(payload);
   }
+
 
   async googleLogin(user: any): Promise<any> {
     return this.usersService.findOrCreateGoogleUser({
