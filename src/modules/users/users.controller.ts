@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Delete, Param, Body, Post } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, Post, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
 
@@ -27,9 +27,18 @@ export class UsersController {
   }
 
   // Эндпоинт для активации пользователя
-  @Post('activate/:token')
+  @Get('activate/:token')
   async activateUser(@Param('token') token: string) {
-    return this.usersService.activateUserByToken(token);
+    // Логируем, что токен поступил в контроллер
+    console.log('🔑 Токен получен в контроллере:', token);
+
+    try {
+      // Вызываем сервис для активации пользователя
+      return await this.usersService.activateUserByToken(token);
+    } catch (error) {
+      // Логируем ошибку и пробрасываем её дальше
+      console.error('⛔ Ошибка при активации пользователя:', error.message);
+      throw new BadRequestException('Не удалось активировать пользователя');
+    }
   }
 }
-
