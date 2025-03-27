@@ -1,10 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { sendPasswordResetEmail } from '../../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly prismaService: PrismaService,
+
   ) {}
 
   async register(
@@ -124,4 +126,38 @@ export class AuthService {
       username: user.username,
     });
   }
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException('Пользователь с таким email не найден');
+    }
+
+    // Генерация уникального токена для сброса пароля
+    const resetToken = randomBytes(32).toString('hex');
+    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+
+    // Сохранение токена в базе данных
+    await this.usersService.updatePasswordResetToken(user.id, resetToken);
+
+    // Отправка email с ссылкой для сброса пароля
+    await sendPasswordResetEmail(email, 'Сброс пароля', resetLink);
+  }
+
+  // Метод для сброса пароля с использованием токена
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await this.usersService.findByPasswordResetToken(token);
+    if (!user) {
+      throw new BadRequestException('Токен для сброса пароля неверный или истек');
+    }
+
+    // Хеширование нового пароля
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Обновление пароля пользователя
+    await this.usersService.updatePassword(user.id, hashedPassword);
+
+    // Очистка токена сброса
+    await this.usersService.updatePasswordResetToken(user.id, '');
+  }
+
 }

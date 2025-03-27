@@ -7,6 +7,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/user.dto';
 import { generateJwtToken, verifyJwtToken } from '../../common/utils/jwt.util';
 import { sendVerificationEmail } from '../../email/email.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -162,6 +163,42 @@ export class UsersService {
           username: data.username,
         },
       });
+    }
+
+    return user;
+  }
+
+  async updatePassword(userId: string, newPassword: string) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashedPassword }, // Обновляем захэшированный пароль
+    });
+
+    return updatedUser;
+  }
+
+  async updatePasswordResetToken(userId: string, resetToken: string) {
+    // Обновляем пользователя, добавляя токен сброса пароля
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordResetToken: resetToken }, // добавляем поле токена сброса
+    });
+
+    return updatedUser;
+  }
+
+  async findByPasswordResetToken(resetToken: string) {
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        passwordResetToken: resetToken, // Используем правильное имя переменной
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException("Неверный или устаревший токен");
     }
 
     return user;
