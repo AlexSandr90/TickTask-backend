@@ -10,7 +10,8 @@ import { sendVerificationEmail } from '../../email/email.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+  }
 
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
@@ -88,43 +89,58 @@ export class UsersService {
     // Генерация токена для магической ссылки
     const token = generateJwtToken(email);
 
+    // Формируем ссылку
+    const magicLink = `http://localhost:3000/users/activate/${token}`;
+
     // Отправка email с магической ссылкой
     await sendVerificationEmail(
       email,
       'Your Magic Link',
-      `Here is your magic link: <your-link-to-activate>?token=${token}`,
+      magicLink
     );
 
     return { message: 'Verification email sent.' };
   }
 
-  // Новый метод для активации пользователя через магическую ссылку
   async activateUserByToken(token: string) {
     let email: string;
-
     try {
-      email = verifyJwtToken(token); // Расшифровка токена и получение email
+      // Логируем токен, чтобы увидеть, что передается
+      console.log('🔑 Пришёл токен для активации пользователя:', token);
+
+      // Расшифровка токена и получение email
+      email = verifyJwtToken(token);
+      console.log('✅ Токен расшифрован, email:', email);  // Логируем расшифрованный email
     } catch (error) {
-      throw new BadRequestException(
-        'Неверная ссылка или срок действия ссылки истёк',
-      );
+      // Логируем ошибку в случае сбоя
+      console.error('⛔ Ошибка при расшифровке токена:', error.message);
+      throw new BadRequestException('Неверная ссылка или срок действия ссылки истёк');
     }
 
     // Находим пользователя по email
+    console.log('🔍 Ищем пользователя по email:', email);
     const user = await this.findByEmail(email);
+    console.log('🔍 Найденный пользователь:', user);  // Логируем найденного пользователя
+
     if (!user) {
+      console.log('⛔ Пользователь с таким email не найден');
       throw new NotFoundException('Пользователь не найден');
     }
 
     // Если пользователь уже активирован, ничего не нужно делать
     if (user.isActive) {
+      console.log('⚠️ Пользователь уже активирован');
       throw new BadRequestException('Пользователь уже активирован');
     }
 
+    // Обновляем статус пользователя
+    console.log('⚡ Обновление статуса пользователя на активного...');
     const updatedUser = await this.prisma.user.update({
       where: { email },
       data: { isActive: true },
     });
+
+    console.log('✅ Пользователь успешно активирован:', updatedUser);  // Логируем успешное обновление
 
     return { message: 'User successfully activated', user: updatedUser };
   }
