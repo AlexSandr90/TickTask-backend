@@ -43,6 +43,7 @@ export class GoogleStrategy {
           googleId: id,
           email: emails[0].value,
           username: `${name.givenName} ${name.familyName}`,
+          isActive: true,
           refreshToken,
         },
       });
