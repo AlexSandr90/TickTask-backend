@@ -5,7 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  Post,
+  Post, Query,
   Req,
   Res,
   UseGuards,
@@ -101,4 +101,18 @@ export class AuthController {
       return res.status(500).json({ error: 'Server error' });
     }
   }
+  @Post('request-password-reset')
+  async requestPasswordReset(@Body('email') email: string): Promise<void> {
+    await this.authService.requestPasswordReset(email);
+  }
+
+  // Сброс пароля
+  @Post('reset-password')
+  async resetPassword(
+    @Query('token') token: string,
+    @Body('newPassword') newPassword: string,
+  ): Promise<void> {
+    await this.authService.resetPassword(token, newPassword);
+  }
+
 }
