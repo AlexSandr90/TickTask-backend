@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend('re_hnQVNEit_Mw3jKozaQMGGqMz4J5hVum2C'); // Убедись, что заменил на свой ключ
+const resend = new Resend(process.env.EMAIL_API_KEY);
 
 /**
  * Функция для отправки письма с подтверждением
@@ -77,7 +77,7 @@ export async function sendVerificationEmail(
 
   try {
     const response = await resend.emails.send({
-      from: 'noreply@taskcraft.click', // Отправитель (твое доменное имя)
+      from: 'support@taskcraft.click', // Отправитель (твое доменное имя)
       to, // Адрес получателя
       subject, // Тема письма
       text, // Текстовая версия для почтовых клиентов без HTML
@@ -158,7 +158,7 @@ export async function sendPasswordResetEmail(
 
   try {
     const response = await resend.emails.send({
-      from: 'noreply@taskcraft.click', // Отправитель (твое доменное имя)
+      from: 'support@taskcraft.click', // Отправитель (твое доменное имя)
       to, // Адрес получателя
       subject, // Тема письма
       text: `To reset your password, click on the following link: ${resetLink}`, // Текстовая версия для почтовых клиентов без HTML
