@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { configureCors } from './configurations/cors.config';
 import { configureHelmet } from './configurations/helmet.config';
 import { PrismaService } from '../prisma/prisma.service';
 import { GoogleStrategy } from './modules/auth/strategy/google.strategy';
@@ -14,7 +13,12 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  configureCors(app);
+  app.enableCors({
+    origin: ['https://localhost:3000', "http://localhost:3000", "http://localhost:4200"],
+    methods: 'GET,POST,PUT,DELETE,OPTIONS', // Разрешаем только GET, POST, PUT, DELETE методы
+    allowedHeaders: 'Content-Type, Authorization', // Разрешаем только заголовки Content-Type и Authorization
+    credentials: true, // Разрешаем отправку cookies
+  });
   configureHelmet(app);
   app.use(cookieParser());
   const prismaService = app.get(PrismaService);
