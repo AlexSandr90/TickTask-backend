@@ -1,7 +1,7 @@
+import * as dotenv from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import * as dotenv from 'dotenv';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { configureCors } from './configurations/cors.config';
 import { configureHelmet } from './configurations/helmet.config';
@@ -15,6 +15,7 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   configureCors(app);
+  configureHelmet(app);
   app.use(cookieParser());
   const prismaService = app.get(PrismaService);
   const port = process.env.PORT || 3000;
@@ -22,8 +23,7 @@ async function bootstrap() {
   const googleStrategy = new GoogleStrategy(prismaService);
   passport.use('google', googleStrategy.strategyConfig());
 
-
-  configureHelmet(app);
+  
   const config = new DocumentBuilder()
     .setTitle('TickTask API Documentation')
     .setDescription('Документація до API')
