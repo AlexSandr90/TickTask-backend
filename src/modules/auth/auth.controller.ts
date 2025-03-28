@@ -69,13 +69,13 @@ export class AuthController {
     return this.authService.refreshToken(userId, refreshToken,  res);
   }
 
-  @Post('logout/:userId')
+  @Post('logout')
   @ApiOperation({ summary: 'Вихід користувача' })
   @ApiResponse({ status: 200, description: 'Користувач успішно вийшов' })
-  async logout(@Param('userId') userId: string, @Res() res: Response): Promise<void> {
-    return this.authService.logout(userId, res);
+  async logout(@Res() res: Response): Promise<void> {
+    res.clearCookie('access_token'); // Удаляем access-токен из куков
+    res.status(200).send({ message: 'Вихід успішний' });
   }
-
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleLogin(@Req() req, @Res() res) {}

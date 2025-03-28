@@ -98,7 +98,7 @@ export class AuthService {
     console.log('👉 userId:', userId);
     console.log('👉 refreshToken из запроса:', refreshToken);
 
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findOne(userId);
 
     console.log('🔹 Найден пользователь:', user ? user.id : 'не найден');
     console.log('👉 refreshToken из базы:', user?.refreshToken);
