@@ -14,6 +14,7 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  configureCors(app);
   app.use(cookieParser());
   const prismaService = app.get(PrismaService);
   const port = process.env.PORT || 3000;
@@ -21,7 +22,7 @@ async function bootstrap() {
   const googleStrategy = new GoogleStrategy(prismaService);
   passport.use('google', googleStrategy.strategyConfig());
 
-  configureCors(app);
+
   configureHelmet(app);
   const config = new DocumentBuilder()
     .setTitle('TickTask API Documentation')
