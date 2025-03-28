@@ -81,7 +81,7 @@ export class UsersService {
     const token = generateJwtToken(email);
 
     // Формируем ссылку
-    const magicLink = `http://localhost:3000/users/activate/${token}`;
+    const magicLink = `https://ticktask-backend.onrender.com/users/activate/${token}`;
 
     // Отправка email с магической ссылкой
     await sendVerificationEmail(email, 'Your Magic Link', magicLink);
