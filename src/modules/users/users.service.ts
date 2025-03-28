@@ -11,8 +11,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
@@ -29,15 +28,6 @@ export class UsersService {
     return this.prisma.user.findUnique({
       where: { email },
     });
-  }
-
-  async findById(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) throw new NotFoundException('Пользователь не найден');
-    return user;
   }
 
   async createUser(username: string, email: string, passwordHash: string) {
@@ -94,11 +84,7 @@ export class UsersService {
     const magicLink = `http://localhost:3000/users/activate/${token}`;
 
     // Отправка email с магической ссылкой
-    await sendVerificationEmail(
-      email,
-      'Your Magic Link',
-      magicLink
-    );
+    await sendVerificationEmail(email, 'Your Magic Link', magicLink);
 
     return { message: 'Verification email sent.' };
   }
@@ -111,17 +97,19 @@ export class UsersService {
 
       // Расшифровка токена и получение email
       email = verifyJwtToken(token);
-      console.log('✅ Токен расшифрован, email:', email);  // Логируем расшифрованный email
+      console.log('✅ Токен расшифрован, email:', email); // Логируем расшифрованный email
     } catch (error) {
       // Логируем ошибку в случае сбоя
       console.error('⛔ Ошибка при расшифровке токена:', error.message);
-      throw new BadRequestException('Неверная ссылка или срок действия ссылки истёк');
+      throw new BadRequestException(
+        'Неверная ссылка или срок действия ссылки истёк',
+      );
     }
 
     // Находим пользователя по email
     console.log('🔍 Ищем пользователя по email:', email);
     const user = await this.findByEmail(email);
-    console.log('🔍 Найденный пользователь:', user);  // Логируем найденного пользователя
+    console.log('🔍 Найденный пользователь:', user); // Логируем найденного пользователя
 
     if (!user) {
       console.log('⛔ Пользователь с таким email не найден');
@@ -141,7 +129,7 @@ export class UsersService {
       data: { isActive: true },
     });
 
-    console.log('✅ Пользователь успешно активирован:', updatedUser);  // Логируем успешное обновление
+    console.log('✅ Пользователь успешно активирован:', updatedUser); // Логируем успешное обновление
 
     return { message: 'User successfully activated', user: updatedUser };
   }
@@ -190,7 +178,6 @@ export class UsersService {
   }
 
   async findByPasswordResetToken(resetToken: string) {
-
     const user = await this.prisma.user.findFirst({
       where: {
         passwordResetToken: resetToken, // Используем правильное имя переменной
@@ -198,7 +185,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException("Неверный или устаревший токен");
+      throw new NotFoundException('Неверный или устаревший токен');
     }
 
     return user;

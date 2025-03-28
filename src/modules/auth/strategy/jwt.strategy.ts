@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { APP_CONFIG } from '../../../configurations/app.config'; // Это ваша конфигурация
+import { Request } from 'express';  // Импортируем Request из express
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -11,7 +12,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // Извлекаем токен только из куки
+        (request: Request) => {
+          return request?.cookies?.access_token; // Токен из куки
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey: APP_CONFIG.secretJWT, // Использование вашего конфигурационного ключа
     });

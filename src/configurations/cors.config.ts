@@ -6,6 +6,7 @@ export function configureCors(app) {
         : ['http://localhost:3000', 'http://localhost:4200', '*'],
 
     methods: 'GET,POST,PUT,DELETE, PATCH, OPTIONS',
-    allowedHeaders: 'Content-Type,Authorization',
+    allowedHeaders: 'Content-Type, Authorization, Cookie',
+    credentials: true,
   });
 }
