@@ -21,4 +21,26 @@ model User {
   refreshToken       String?
   googleId           String?   @unique
   passwordResetToken String?
+  WorkDesk           WorkDesk[]
+}
+
+model WorkDesk {
+  id          String   @id @unique @default(uuid())
+  title       String
+  description String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns     Column[]
+}
+
+model Column {
+  id         String   @id @unique @default(uuid())
+  title      String
+  order      Int      @default(0)
+  workDeskId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workDesk   WorkDesk @relation(fields: [workDeskId], references: [id], onDelete: Cascade)
 }
