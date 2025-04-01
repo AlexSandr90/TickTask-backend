@@ -21,10 +21,10 @@ model User {
   refreshToken       String?
   googleId           String?   @unique
   passwordResetToken String?
-  WorkDesk           WorkDesk[]
+  WorkDesk           Board[]
 }
 
-model WorkDesk {
+model Board {
   id          String   @id @unique @default(uuid())
   title       String
   description String?
@@ -36,11 +36,11 @@ model WorkDesk {
 }
 
 model Column {
-  id         String   @id @unique @default(uuid())
-  title      String
-  order      Int      @default(0)
-  workDeskId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  workDesk   WorkDesk @relation(fields: [workDeskId], references: [id], onDelete: Cascade)
+  id        String   @id @unique @default(uuid())
+  title     String
+  order     Int      @default(0)
+  boardId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
 }
