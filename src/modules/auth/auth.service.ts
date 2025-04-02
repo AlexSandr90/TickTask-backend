@@ -79,7 +79,7 @@ export class AuthService {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: false,  // Убедитесь, что в продакшн-режиме будет true
-      maxAge: 3600000, // 1 час
+      maxAge: 10 * 24 * 60 * 60 * 1000, // 1 час
       path: '/',
     });
     console.log('✅ Access token отправлен в куки');
@@ -110,38 +110,50 @@ export class AuthService {
 
     console.log('✅ Токен прошёл проверку, генерируем новый access_token');
     const payload = { email: user.email, sub: user.id };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '10d' });
+
+    // Убедитесь, что корректно отправляете ответ
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: false,   // включаем для HTTPS (если в продакшене)
-      maxAge: 3600000,  // время жизни куки (1 час)
+      maxAge: 10 * 24 * 60 * 60 * 1000,  // время жизни куки (1 час)
       sameSite: 'None', // Это необходимо для кросс-доменных запросов
     });
     console.log('✅ Новый access_token сгенерирован:', accessToken);
 
-    return { access_token: accessToken };
-  }
-
-  async logout(userId: string,  @Response() res: any): Promise<void> {
-    await this.usersService.updateRefreshToken(userId, '');
-    res.clearCookie('access_token');
-  }
-
-  async generateJwt(user: UserWithoutPassword): Promise<any> {
-    const payload = { sub: user.id, email: user.email };
-
-
-    return this.jwtService.sign(payload);
+    // Отправляем json ответ для Postman
+    return res.json({ access_token: accessToken });
   }
 
 
   async googleLogin(user: any): Promise<any> {
-    return this.usersService.findOrCreateGoogleUser({
-      googleId: user.googleId,
-      email: user.email,
-      username: user.username,
-    });
+    try {
+      // Логируем данные пользователя для отладки
+      console.log('Google User Data:', user);
+
+      // Проверяем, что все необходимые поля присутствуют
+      if (!user.googleId || !user.email || !user.username) {
+        throw new Error('Missing required fields from Google user data');
+      }
+
+      // Передаем данные в сервис для поиска или создания пользователя
+      const foundOrCreatedUser = await this.usersService.findOrCreateGoogleUser({
+        googleId: user.googleId,
+        email: user.email,
+        username: user.username,
+      });
+
+      // Логируем успешное создание или поиск пользователя
+      console.log('User after findOrCreate:', foundOrCreatedUser);
+
+      return foundOrCreatedUser;
+    } catch (error) {
+      // Логируем ошибки, если что-то пошло не так
+      console.error('Error in googleLogin:', error);
+      throw new Error('Error during Google login');
+    }
   }
+
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
