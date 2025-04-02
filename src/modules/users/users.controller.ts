@@ -79,7 +79,7 @@ export class UsersController {
     // Удаляем пользователя
     await this.usersService.remove(email);
 
-    // Отправляем успешный ответ
+
     return {
       statusCode: HttpStatus.OK,
       message: 'Аккаунт успешно удален',

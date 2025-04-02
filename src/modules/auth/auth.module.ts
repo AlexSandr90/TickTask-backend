@@ -6,14 +6,14 @@ import { UsersService } from '../users/users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { ConfigModule, ConfigService } from '@nestjs/config'; // Добавление для глобальной конфигурации
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     PrismaModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule], // Подключение ConfigModule
-      inject: [ConfigService], // Внедрение ConfigService
+      imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('secretJWT') || 'veryHardSecret',
         signOptions: { expiresIn: configService.get<string>('expireJwt') || '10d' },

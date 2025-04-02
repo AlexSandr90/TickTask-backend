@@ -7,7 +7,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Post,
   Query,
   Req,
@@ -20,14 +19,12 @@ import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import { UserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtService } from '@nestjs/jwt';
 import { generateJwtToken } from '../../common/utils/jwt.util';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService, // Ваш сервис аутентификации
-    private readonly jwtService: JwtService, // Внедряем JwtService
   ) {}
   @Post('register')
   @ApiOperation({ summary: 'Реєстрація нового користувача' })
@@ -68,87 +65,85 @@ export class AuthController {
     }
   }
 
-  @Post('refresh/:userId')
+  @Post('refresh')
   @ApiOperation({ summary: 'Оновлення токену' })
   @ApiResponse({ status: 200, description: 'Токен оновлено' })
   @ApiResponse({ status: 401, description: 'Недійсний токен' })
   async refreshToken(
-    @Param('userId') userId: string,
+    @Body('email') email: string,
     @Body('refresh_token') refreshToken: string,
-    @Res() res: Response, // Теперь ждёт именно refresh_token
-  ): Promise<{ access_token: string }> {  if (!refreshToken) {
-    throw new BadRequestException('Refresh token не передан');
-  }
-    return this.authService.refreshToken(userId, refreshToken, res);
+    @Res() res: Response
+  ): Promise<{ access_token: string }> {
+    if (!email || !refreshToken) {
+      throw new BadRequestException('Email або refresh token не передані');
+    }
+
+    return this.authService.refreshToken(email, refreshToken, res);
   }
 
   @Post('logout')
   @ApiOperation({ summary: 'Вихід користувача' })
   @ApiResponse({ status: 200, description: 'Користувач успішно вийшов' })
   async logout(@Res() res: Response): Promise<void> {
-    res.clearCookie('access_token'); // Удаляем access-токен из куков
+    res.clearCookie('access_token');
     res.status(200).send({ message: 'Вихід успішний' });
   }
   @Get('google')
-  @UseGuards(AuthGuard('google'))  // Используем guard для аутентификации через Google
+  @UseGuards(AuthGuard('google'))
   googleLogin(@Req() req: Request, @Res() res: Response) {
-    // После успешной аутентификации, данные пользователя будут доступны в req.user
-    console.log('Google User:', req.user);  // Логируем данные пользователя (можно заменить на свои)
+
 
     // Возвращаем данные пользователя в ответе
     return res.json({
       message: 'Google authentication successful',
-      user: req.user,  // Данные пользователя
+      user: req.user,
     });
   }
 
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google')) // Защищаем через Google OAuth
+  @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
     try {
       const user = req.user;
 
       if (!user) {
-        console.error('Google callback: User not found in request');
         return res.status(400).json({
           error: 'User ID not found in Google callback',
           code: 'USER_ID_NOT_FOUND',
         });
       }
 
-      console.log('User data from Google callback:', user);
 
-      const processedUser = await this.authService.googleLogin(user); // Обработка данных пользователя, если необходимо
-      const { email, sub } = processedUser;
 
-      // Проверяем, что ID пользователя (sub) присутствует
-      if (!sub) {
-        console.error('Processed user data missing sub ID:', processedUser);
+      const processedUser = await this.authService.googleLogin(user);
+      const { email, googleId } = processedUser;
+      if (!googleId) {
+
         return res.status(400).json({
           error: 'User ID (sub) not found in processed user data',
           code: 'USER_ID_NOT_FOUND',
         });
       }
 
-      console.log('Processed user:', processedUser);
 
-      // Генерация JWT
-      const accessToken = generateJwtToken(email, sub);
-      console.log('Generated JWT:', accessToken);
 
-      // Устанавливаем JWT в куки
+
+      const accessToken = generateJwtToken(email, googleId);
+
+
+
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: false,  // В продакшн-среде это должно быть true
-        maxAge: 10 * 24 * 60 * 60 * 1000,  // 10 дней
+        secure: false,
+        maxAge: 10 * 24 * 60 * 60 * 1000,
       });
 
-      // Возвращаем успешный ответ
+
       return res.json({
         message: 'Authentication successful',
-        user: processedUser,  // Вы можете вернуть информацию о пользователе, если нужно
-        access_token: accessToken, // Также можно вернуть токен напрямую, если необходимо
+        user: processedUser,
+        access_token: accessToken,
       });
     } catch (error) {
       console.error('Google Callback Error:', error);
