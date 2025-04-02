@@ -6,6 +6,7 @@ import { UsersService } from '../users/users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { APP_CONFIG } from '../../configurations/app.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -14,11 +15,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('secretJWT') || 'veryHardSecret',
-        signOptions: { expiresIn: configService.get<string>('expireJwt') || '10d' },
+      useFactory: async () => ({
+        secret: APP_CONFIG.secretJWT,
+        signOptions: { expiresIn: APP_CONFIG.expireJwt },
       }),
-    }),
+    })
   ],
   controllers: [AuthController],
   providers: [
