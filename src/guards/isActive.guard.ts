@@ -11,7 +11,7 @@ export class IsActiveGuard implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
-    const user = request.user; // Получаем данные пользователя из запроса (из JWT токена)
+    const user = request.user;
 
     if (!user || !user.email) {
       throw new ForbiddenException('Доступ запрещен');
@@ -21,7 +21,7 @@ export class IsActiveGuard implements CanActivate {
       if (!foundUser || !foundUser.isActive) {
         throw new ForbiddenException('Аккаунт не активирован');
       }
-      return true; // Если пользователь активирован, разрешаем доступ
+      return true;
     });
   }
 }

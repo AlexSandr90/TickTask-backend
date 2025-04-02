@@ -1,10 +1,15 @@
-import { BadRequestException, Injectable, UnauthorizedException, Response, HttpStatus } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  Response,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import { randomBytes } from 'crypto';
-import { PrismaService } from '../../../prisma/prisma.service';
 import { sendPasswordResetEmail } from '../../email/email.service';
 
 @Injectable()
@@ -12,8 +17,6 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly prismaService: PrismaService,
-
   ) {}
 
   async register(
@@ -47,109 +50,82 @@ export class AuthService {
     email: string,
     password: string,
     @Response() res: any,
-  ): Promise<void> {  // Возвращаем void, потому что не возвращаем данные в теле
-    console.log('📩 Получен email:', email);
+  ): Promise<void> {
+
 
     const user = await this.usersService.findByEmail(email);
-    console.log('🔍 Найден пользователь:', user);
+
 
     if (!user || !user.passwordHash) {
-      console.log('⛔ Пользователь не найден или пароль отсутствует');
+
       throw new UnauthorizedException('Неверные учетные данные');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    console.log('🔑 Проверка пароля:', isPasswordValid);
+
 
     if (!isPasswordValid) {
-      console.log('⛔ Неверный пароль');
+
       throw new UnauthorizedException('Неверные учетные данные');
     }
 
     const payload = { email: user.email, sub: user.id };
-    console.log('🎯 Генерация токена с payload:', payload);
-    const accessToken = this.jwtService.sign(payload);
-    console.log('🎯 Генерация access token:', accessToken);
-    const refreshToken = randomBytes(32).toString('hex');
-    console.log('✅ Refresh token сгенерирован:', refreshToken);
-    await this.usersService.updateRefreshToken(user.id, refreshToken);
-    console.log('✅ Refresh token сохранен в базе данных');
 
-    // Устанавливаем токены в куки
+    const accessToken = this.jwtService.sign(payload);
+
+    const refreshToken = randomBytes(32).toString('hex');
+
+    await this.usersService.updateRefreshToken(user.id, refreshToken);
+
+
+
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: false,  // Убедитесь, что в продакшн-режиме будет true
+      secure: false, // Убедитесь, что в продакшн-режиме будет true
       maxAge: 10 * 24 * 60 * 60 * 1000, // 1 час
       path: '/',
     });
-    console.log('✅ Access token отправлен в куки');
 
-    // Ответ без тела
+
     return res.status(HttpStatus.OK).json({ message: 'Успешный вход' });
-
   }
 
   async refreshToken(
-    userId: string,
+    email: string,
     refreshToken: string,
-    @Response() res: any
+    @Response() res: any,
   ): Promise<{ access_token: string }> {
-    console.log('🔹 Начало обновления токена');
-    console.log('👉 userId:', userId);
-    console.log('👉 refreshToken из запроса:', refreshToken);
-
-    const user = await this.usersService.findOne(userId);
-
-    console.log('🔹 Найден пользователь:', user ? user.id : 'не найден');
-    console.log('👉 refreshToken из базы:', user?.refreshToken);
+    const user = await this.usersService.findOne(email);
 
     if (!user || user.refreshToken !== refreshToken) {
-      console.error('❌ Недействительный токен или пользователь не найден');
       throw new UnauthorizedException('Недействительный токен');
     }
 
-    console.log('✅ Токен прошёл проверку, генерируем новый access_token');
     const payload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '10d' });
 
-    // Убедитесь, что корректно отправляете ответ
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: false,   // включаем для HTTPS (если в продакшене)
-      maxAge: 10 * 24 * 60 * 60 * 1000,  // время жизни куки (1 час)
-      sameSite: 'None', // Это необходимо для кросс-доменных запросов
+      secure: false,
+      maxAge: 10 * 24 * 60 * 60 * 1000,
+      sameSite: 'None',
     });
-    console.log('✅ Новый access_token сгенерирован:', accessToken);
 
-    // Отправляем json ответ для Postman
     return res.json({ access_token: accessToken });
   }
 
-
   async googleLogin(user: any): Promise<any> {
     try {
-      // Логируем данные пользователя для отладки
-      console.log('Google User Data:', user);
-
-      // Проверяем, что все необходимые поля присутствуют
       if (!user.googleId || !user.email || !user.username) {
-        throw new Error('Missing required fields from Google user data');
+
       }
 
-      // Передаем данные в сервис для поиска или создания пользователя
-      const foundOrCreatedUser = await this.usersService.findOrCreateGoogleUser({
+      return await this.usersService.findOrCreateGoogleUser({
         googleId: user.googleId,
         email: user.email,
         username: user.username,
       });
-
-      // Логируем успешное создание или поиск пользователя
-      console.log('User after findOrCreate:', foundOrCreatedUser);
-
-      return foundOrCreatedUser;
     } catch (error) {
-      // Логируем ошибки, если что-то пошло не так
-      console.error('Error in googleLogin:', error);
       throw new Error('Error during Google login');
     }
   }
@@ -160,32 +136,26 @@ export class AuthService {
       throw new BadRequestException('Пользователь с таким email не найден');
     }
 
-    // Генерация уникального токена для сброса пароля
     const resetToken = randomBytes(32).toString('hex');
     const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
 
-    // Сохранение токена в базе данных
     await this.usersService.updatePasswordResetToken(user.id, resetToken);
 
-    // Отправка email с ссылкой для сброса пароля
     await sendPasswordResetEmail(email, 'Сброс пароля', resetLink);
   }
 
-  // Метод для сброса пароля с использованием токена
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const user = await this.usersService.findByPasswordResetToken(token);
     if (!user) {
-      throw new BadRequestException('Токен для сброса пароля неверный или истек');
+      throw new BadRequestException(
+        'Токен для сброса пароля неверный или истек',
+      );
     }
 
-    // Хеширование нового пароля
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Обновление пароля пользователя
     await this.usersService.updatePassword(user.id, hashedPassword);
 
-    // Очистка токена сброса
     await this.usersService.updatePasswordResetToken(user.id, '');
   }
-
 }

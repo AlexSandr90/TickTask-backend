@@ -14,10 +14,10 @@ import { JwtAuthGuard } from '../../guards/auth.guard';
     JwtModule.register({
       secret: APP_CONFIG.secretJWT || 'veryHardSecret',
       signOptions: { expiresIn: APP_CONFIG.expireJwt || '10d' },
-    }), // ✅ Добавляем JwtModule
+    }), //
   ],
   controllers: [UsersController],
   providers: [JwtStrategy, JwtAuthGuard, UsersService],
-  exports: [UsersService], // ✅ Экспортируем UsersService
+  exports: [UsersService], //
 })
 export class UsersModule {}

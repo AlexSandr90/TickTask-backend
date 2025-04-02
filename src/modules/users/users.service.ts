@@ -1,7 +1,8 @@
 import {
-  Injectable,
-  NotFoundException,
   BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/user.dto';
@@ -14,21 +15,17 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findOne(email: string) {
-    console.log('🔍 findOne called with email:', email); // Логируем перед запросом
-
     const user = await this.prisma.user.findUnique({
       where: {
-        email, // Ищем по email
+        email,
       },
     });
 
     if (!user) {
-      console.error(`❌ User not found with email: ${email}`);
       throw new Error('User not found');
     }
-
-    return user;
-
+    const { passwordHash, googleId, passwordResetToken, ...safeUser } = user;
+    return safeUser;
   }
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
@@ -42,23 +39,25 @@ export class UsersService {
         username,
         email,
         passwordHash,
-        isActive: false, // Статус пользователя по умолчанию неактивен
+        isActive: false,
       },
     });
   }
 
   async update(email: string, data: UpdateUserDto) {
-    const { isActive, ...updateData } = data; // Оставляем isActive без изменений, если оно не передано
+    const { isActive, ...updateData } = data;
 
     const user = await this.prisma.user.update({
       where: { email },
-      data: updateData, // Передаем только данные для обновления, кроме isActive
+      data: updateData,
     });
 
     if (!user) throw new NotFoundException('Не удалось обновить пользователя');
-    return user;
-  }
 
+    const { refreshToken, passwordHash, ...safeUser } = user;
+
+    return safeUser;
+  }
   async remove(email: string) {
     const user = await this.prisma.user.delete({ where: { email } });
     if (!user) throw new NotFoundException('Пользователь не найден');
@@ -75,53 +74,65 @@ export class UsersService {
     });
   }
 
-  // Новый метод для отправки магической ссылки
   async sendMagicLink(email: string) {
-    // Проверяем, существует ли пользователь с данным email
+    if (!email) {
+      throw new BadRequestException('Email не передан');
+    }
+
     const user = await this.findByEmail(email);
     if (!user) {
       throw new NotFoundException('Пользователь с таким email не найден');
     }
 
-    // Генерация токена для магической ссылки
     const token = generateJwtToken(email, user.id);
-
-    // Формируем ссылку
     const magicLink = `https://ticktask-backend.onrender.com/users/activate/${token}`;
 
-    // Отправка email с магической ссылкой
-    await sendVerificationEmail(email, 'Your Magic Link', magicLink);
+    try {
+      await sendVerificationEmail(email, 'Your Magic Link', magicLink);
+    } catch (error) {
+      throw new InternalServerErrorException('Ошибка отправки письма');
+    }
 
     return { message: 'Verification email sent.' };
   }
 
   async activateUserByToken(token: string) {
-    let email: string;
-    let userId: string;
-
-    try {
-      console.log('🔑 Пришёл токен для активации пользователя:', token);
-
-      // Расшифровка токена и получение email и userId
-      const decoded = verifyJwtToken(token); // Расшифровываем токен
-      email = decoded.email;
-      userId = decoded.sub; // Извлекаем userId из токена
-
-      console.log('✅ Токен расшифрован, email:', email, 'userId:', userId); // Логируем email и userId
-    } catch (error) {
-      console.error('⛔ Ошибка при расшифровке токена:', error.message);
-      throw new BadRequestException(`Неверная ссылка или срок действия ссылки истёк. Ошибка: ${error.message}`);
+    if (!token) {
+      throw new BadRequestException('Токен не передан');
     }
 
-    console.log('⚡ Обновление статуса пользователя на активного...');
-    const updatedUser = await this.prisma.user.update({
-      where: { email },
-      data: { isActive: true },
-    });
+    let email: string;
 
-    console.log('✅ Пользователь успешно активирован:', updatedUser); // Логируем успешное обновление
+    try {
+      const decoded = verifyJwtToken(token);
+      email = decoded.email;
+    } catch (error) {
+      throw new BadRequestException(
+        `Неверная ссылка или срок действия истёк. Ошибка: ${error.message}`,
+      );
+    }
 
-    return { message: 'User successfully activated', user: updatedUser };
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    if (user.isActive) {
+      throw new BadRequestException('Пользователь уже активирован');
+    }
+
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { email },
+        data: { isActive: true },
+      });
+
+      return { message: 'User successfully activated', user: updatedUser };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Не удалось активировать пользователя',
+      );
+    }
   }
 
   async findOrCreateGoogleUser(data: {
@@ -130,24 +141,19 @@ export class UsersService {
     username: string;
   }): Promise<any> {
     try {
-      // Проверка на пустые значения
       if (!data.googleId || !data.email || !data.username) {
-        throw new Error('Missing required fields: googleId, email, or username');
       }
 
-      // Сначала ищем пользователя по googleId
       let user = await this.prisma.user.findUnique({
         where: { googleId: data.googleId },
       });
 
-      // Если пользователь не найден по googleId, ищем по email
       if (!user) {
         user = await this.prisma.user.findUnique({
           where: { email: data.email },
         });
       }
 
-      // Если пользователь все еще не найден, создаем нового
       if (!user) {
         user = await this.prisma.user.create({
           data: {
@@ -156,14 +162,11 @@ export class UsersService {
             username: data.username,
           },
         });
-        console.log('Created new user:', user);
       } else {
-        console.log('Found existing user:', user);
       }
 
       return user;
     } catch (error) {
-      console.error('Error in findOrCreateGoogleUser:', error);
       throw new Error('Error while finding or creating Google user');
     }
   }
@@ -171,28 +174,23 @@ export class UsersService {
   async updatePassword(userId: string, newPassword: string) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const updatedUser = await this.prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
-      data: { passwordHash: hashedPassword }, // Обновляем захэшированный пароль
+      data: { passwordHash: hashedPassword },
     });
-
-    return updatedUser;
   }
 
   async updatePasswordResetToken(userId: string, resetToken: string) {
-    // Обновляем пользователя, добавляя токен сброса пароля
-    const updatedUser = await this.prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
-      data: { passwordResetToken: resetToken }, // добавляем поле токена сброса
+      data: { passwordResetToken: resetToken },
     });
-
-    return updatedUser;
   }
 
   async findByPasswordResetToken(resetToken: string) {
     const user = await this.prisma.user.findFirst({
       where: {
-        passwordResetToken: resetToken, // Используем правильное имя переменной
+        passwordResetToken: resetToken,
       },
     });
 

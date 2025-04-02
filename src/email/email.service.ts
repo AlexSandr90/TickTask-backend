@@ -77,17 +77,15 @@ export async function sendVerificationEmail(
   `;
 
   try {
-    const response = await resend.emails.send({
+    await resend.emails.send({
       from: 'support@taskcraft.click', // Отправитель (твое доменное имя)
       to, // Адрес получателя
       subject, // Тема письма
       text, // Текстовая версия для почтовых клиентов без HTML
       html: emailBody, // HTML-версия с оформлением
     });
-
-    console.log('Email sent successfully:', response);
   } catch (error) {
-    console.error('Error sending email:', error);
+
   }
 }
 export async function sendPasswordResetEmail(
@@ -158,16 +156,14 @@ export async function sendPasswordResetEmail(
   `;
 
   try {
-    const response = await resend.emails.send({
+    await resend.emails.send({
       from: 'support@taskcraft.click', // Отправитель (твое доменное имя)
       to, // Адрес получателя
       subject, // Тема письма
       text: `To reset your password, click on the following link: ${resetLink}`, // Текстовая версия для почтовых клиентов без HTML
       html: emailBody, // HTML-версия с оформлением
     });
-
-    console.log('Password reset email sent successfully:', response);
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+
   }
 }
