@@ -2,27 +2,30 @@ import * as jwt from 'jsonwebtoken';
 import { APP_CONFIG } from '../../configurations/app.config';
 import { BadRequestException } from '@nestjs/common';
 
+
 interface JwtPayload {
   email: string;
+  sub: string;
+  iat: number;
+  exp: number;
 }
 
-// Функция для генерации токена
-export function generateJwtToken(email: string) {
+// Функция для генерации токена с добавлением ID пользователя
+export function generateJwtToken(email: string, sub: string)  {
   const secretJWT = APP_CONFIG.secretJWT;
-  console.log('SECRET при генерации:', secretJWT); // Проверяем секрет
+
+
   if (!secretJWT) {
-    throw new Error('JWT secret is not defined'); // Вы можете выбросить ошибку, если секретный ключ отсутствует
+    throw new Error('JWT secret is not defined');
   }
 
-  const payload = { email };
-  return jwt.sign(payload, secretJWT, { expiresIn: '1h' }); // Генерация токена с временем жизни 1 час
+  const payload = { email, sub }; // Добавляем ID в payload
+  return jwt.sign(payload, secretJWT, { expiresIn: '10d' }); // Генерация токена с временем жизни 10 дней
 }
 
-// Функция для верификации токена
-export function verifyJwtToken(token: string): string {
+// Функция для верификации токена и извлечения ID пользователя
+export function verifyJwtToken(token: string): JwtPayload {
   const secretJWT = APP_CONFIG.secretJWT;
-
-  console.log('SECRET:', secretJWT); // Проверяем секретный ключ
 
   if (!secretJWT) {
     throw new Error('JWT secret is not defined');
@@ -30,14 +33,18 @@ export function verifyJwtToken(token: string): string {
 
   try {
     const decoded = jwt.verify(token, secretJWT) as JwtPayload;
-    console.log('Decoded token:', decoded); // Проверяем, что токен успешно декодируется
-    return decoded.email;
+
+    console.log('✅ Декодированный токен:', decoded);
+
+    if (!decoded.email || !decoded.sub) {
+      throw new BadRequestException('Неверный токен');
+    }
+
+    return { email: decoded.email, sub: decoded.sub, iat: decoded.iat, exp: decoded.exp };
   } catch (error) {
-    console.error('JWT Verification Error:', error);
     if (error.name === 'TokenExpiredError') {
       throw new BadRequestException('Срок действия токена истёк');
     }
     throw new BadRequestException('Неверная ссылка или токен повреждён');
   }
 }
-

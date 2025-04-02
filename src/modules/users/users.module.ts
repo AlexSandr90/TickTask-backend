@@ -3,11 +3,21 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { JwtStrategy } from '../auth/strategy/jwt.strategy';
-import { AuthGuard } from '../../guards/auth.guard';
+
+import { JwtModule } from '@nestjs/jwt';
+import { APP_CONFIG } from '../../configurations/app.config';
+import { JwtAuthGuard } from '../../guards/auth.guard';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    JwtModule.register({
+      secret: APP_CONFIG.secretJWT || 'veryHardSecret',
+      signOptions: { expiresIn: APP_CONFIG.expireJwt || '10d' },
+    }), // ✅ Добавляем JwtModule
+  ],
   controllers: [UsersController],
-  providers: [JwtStrategy, AuthGuard, UsersService],
+  providers: [JwtStrategy, JwtAuthGuard, UsersService],
+  exports: [UsersService], // ✅ Экспортируем UsersService
 })
 export class UsersModule {}

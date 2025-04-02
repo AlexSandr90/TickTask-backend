@@ -17,6 +17,7 @@ export async function sendVerificationEmail(
   const emailBody = `
     <html lang="">
       <head>
+      <title>Artem</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -139,7 +140,7 @@ export async function sendPasswordResetEmail(
             color: #999;
             margin-top: 30px;
           }
-        </style>
+        </style><title>Artem</title>
       </head>
       <body>
         <div class="container">

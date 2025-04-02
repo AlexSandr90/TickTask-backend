@@ -5,15 +5,19 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleStrategy } from './strategy/google.strategy';
-import * as passport from 'passport';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // Добавление для глобальной конфигурации
 
 @Module({
   imports: [
     PrismaModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '1h' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule], // Подключение ConfigModule
+      inject: [ConfigService], // Внедрение ConfigService
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('secretJWT') || 'veryHardSecret',
+        signOptions: { expiresIn: configService.get<string>('expireJwt') || '10d' },
+      }),
     }),
   ],
   controllers: [AuthController],
@@ -28,7 +32,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
         const strategy = new GoogleStrategy(prismaService);
         return strategy.strategyConfig();
       },
-      inject: [GoogleStrategy],
+      inject: [PrismaService],
     },
   ],
 })

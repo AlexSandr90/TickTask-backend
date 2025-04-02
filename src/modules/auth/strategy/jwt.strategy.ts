@@ -1,30 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { APP_CONFIG } from '../../../configurations/app.config'; // Это ваша конфигурация
-import { Request } from 'express';  // Импортируем Request из express
+import { UsersService } from '../../users/users.service';
+import { APP_CONFIG } from '../../../configurations/app.config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    if (!APP_CONFIG.secretJWT) {
-      throw new Error('JWT secret is not defined');
-    }
-
+  constructor(private usersService: UsersService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        // Извлекаем токен только из куки
-        (request: Request) => {
-          return request?.cookies?.access_token; // Токен из куки
-        },
+        (req) => req?.cookies?.access_token,
       ]),
-      ignoreExpiration: false,
-      secretOrKey: APP_CONFIG.secretJWT, // Использование вашего конфигурационного ключа
+      secretOrKey: APP_CONFIG.secretJWT || 'veryHardSecret',
     });
   }
 
-  async validate(payload: any): Promise<any> {
-    // Возвращаем данные из payload, которые можно использовать в других частях приложения
-    return { userId: payload.sub, email: payload.email }; // например, вы можете возвращать ID и email пользователя
+  async validate(payload: any) {
+    console.log('🎯 Payload in validate:', payload); // Логируем payload
+    const user = await this.usersService.findOne(payload.email); // Ищем по email, который передан в payload
+    return user;
   }
 }
