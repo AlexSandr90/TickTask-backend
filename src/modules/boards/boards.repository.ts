@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-
 @Injectable()
 export class BoardsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
     return this.prisma.board.findMany();
-
   }
 
   async findOne(id: string) {
