@@ -18,7 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "dev": "npm run start:dev"
+    "dev": "npm run start:dev",
+    "prisma:dev": "dotenv -e .env.local -- npx prisma migrate dev",
+    "start:dev:local": "dotenv -e .env.local -- npm run start:dev"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
