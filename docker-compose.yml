@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:15
+    container_name: ticktask-db
+    restart: always
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: ticktask
+      POSTGRES_PASSWORD: ticktask
+      POSTGRES_DB: ticktask
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine3.14
+    container_name: redis-ticktask
+    ports:
+      - '6379:6379'
+    restart: always
+
+  prisma-studio:
+    build: .
+    container_name: ticktask-prisma-studio
+    restart: always
+    depends_on:
+      - postgresql
+    ports:
+      - '5555:5555'
+    environment:
+      DATABASE_URL: "postgresql://ticktask:ticktask@postgresql:5432/ticktask"
+    command: npx prisma studio --port 5555 --hostname 0.0.0.0
+
+  backend:
+    build: .
+    container_name: ticktask-backend
+    restart: always
+    depends_on:
+      - postgresql
+      - redis
+    ports:
+      - '8080:8080'
+    environment:
+      PORT: 8080
+      DATABASE_URL: "postgresql://ticktask:ticktask@postgresql:5432/ticktask"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SECRET: "veryHardSecret"
+      SECRET_REFRESH: "veryRefreshHardSecret"
+      EXPIRE_JWT: 86400
+      EXPIRE_JWT_REFRESH: 604800
+      EMAIL_API_KEY: ${EMAIL_API_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+    #    volumes:
+    #      - .:/app
+    command: [ "npm", "run", "dev" ]
+
+volumes:
+  postgres_data:
