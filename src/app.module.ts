@@ -4,7 +4,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BoardsModule } from './modules/boards/boards.module';
-
+import { ColumnsModule } from './modules/columns/columns.module';
 
 @Module({
   imports: [
@@ -17,6 +17,7 @@ import { BoardsModule } from './modules/boards/boards.module';
     AuthModule,
     UsersModule,
     BoardsModule,
+    ColumnsModule,
   ],
   controllers: [],
   providers: [],
