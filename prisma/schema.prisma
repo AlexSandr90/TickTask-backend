@@ -43,4 +43,15 @@ model Column {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  Task      Task[]
+}
+
+model Task {
+  id          String   @id @unique @default(uuid())
+  title       String
+  description String?
+  columnId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
 }
