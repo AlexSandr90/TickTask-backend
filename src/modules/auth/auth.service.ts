@@ -26,14 +26,12 @@ export class AuthService {
     confirmPassword: string,
   ): Promise<UserWithoutPassword> {
     if (password !== confirmPassword) {
-      throw new UnauthorizedException('Пароли не совпадают');
+      throw new UnauthorizedException('Паролі не збігаються');
     }
 
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
-      throw new UnauthorizedException(
-        'Пользователь с таким email уже существует',
-      );
+      throw new UnauthorizedException('A user with this email already exists.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -51,22 +49,16 @@ export class AuthService {
     password: string,
     @Response() res: any,
   ): Promise<void> {
-
-
     const user = await this.usersService.findByEmail(email);
 
-
     if (!user || !user.passwordHash) {
-
-      throw new UnauthorizedException('Неверные учетные данные');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
-
     if (!isPasswordValid) {
-
-      throw new UnauthorizedException('Неверные учетные данные');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const payload = { email: user.email, sub: user.id };
@@ -77,8 +69,6 @@ export class AuthService {
 
     await this.usersService.updateRefreshToken(user.id, refreshToken);
 
-
-
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: false, // Убедитесь, что в продакшн-режиме будет true
@@ -86,8 +76,7 @@ export class AuthService {
       path: '/',
     });
 
-
-    return res.status(HttpStatus.OK).json({ message: 'Успешный вход' });
+    return res.status(HttpStatus.OK).json({ message: 'Successful login' });
   }
 
   async refreshToken(
@@ -98,7 +87,7 @@ export class AuthService {
     const user = await this.usersService.findOne(email);
 
     if (!user || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('Недействительный токен');
+      throw new UnauthorizedException('Invalid token');
     }
 
     const payload = { email: user.email, sub: user.id };
@@ -117,7 +106,6 @@ export class AuthService {
   async googleLogin(user: any): Promise<any> {
     try {
       if (!user.googleId || !user.email || !user.username) {
-
       }
 
       return await this.usersService.findOrCreateGoogleUser({
@@ -133,7 +121,7 @@ export class AuthService {
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      throw new BadRequestException('Пользователь с таким email не найден');
+      throw new BadRequestException('No user with this email address found.');
     }
 
     const resetToken = randomBytes(32).toString('hex');
@@ -141,14 +129,14 @@ export class AuthService {
 
     await this.usersService.updatePasswordResetToken(user.id, resetToken);
 
-    await sendPasswordResetEmail(email, 'Сброс пароля', resetLink);
+    await sendPasswordResetEmail(email, 'Password reset', resetLink);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const user = await this.usersService.findByPasswordResetToken(token);
     if (!user) {
       throw new BadRequestException(
-        'Токен для сброса пароля неверный или истек',
+        'Password reset token is invalid or expired',
       );
     }
 

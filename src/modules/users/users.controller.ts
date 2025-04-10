@@ -27,12 +27,12 @@ export class UsersController {
     const email = req.user?.email; // Берем email из user объекта
 
     if (!email) {
-      throw new BadRequestException('Email не найден в токене');
+      throw new BadRequestException('Email address not found in token');
     }
 
     const user = await this.usersService.findOne(email); // Ищем по email
     if (!user) {
-      throw new BadRequestException('Пользователь не найден');
+      throw new BadRequestException('User not found');
     }
 
     const { refreshToken, ...userData } = user;
@@ -45,12 +45,12 @@ export class UsersController {
     const email = req.user?.email; // Получаем email из токена
 
     if (!email) {
-      throw new UnauthorizedException('Не удалось получить email пользователя из токена');
+      throw new UnauthorizedException('Failed to get user email from token');
     }
 
     const user = await this.usersService.findOne(email);
     if (!user) {
-      throw new UnauthorizedException('Пользователь не найден');
+      throw new UnauthorizedException('User not found');
     }
 
     return this.usersService.update(email, userData);
@@ -62,37 +62,37 @@ export class UsersController {
     const email = req.user?.email; // Получаем email из токена
 
     if (!email) {
-      throw new BadRequestException('Неверный запрос: отсутствует email пользователя');
+      throw new BadRequestException(
+        'Invalid request: user email address missing',
+      );
     }
 
     // Проверяем, существует ли пользователь в базе данных
     const user = await this.usersService.findOne(email);
     if (!user) {
-      throw new BadRequestException('Пользователь не найден');
+      throw new BadRequestException('User not found');
     }
 
     // Убедимся, что текущий пользователь может удалить только себя
     if (email !== user.email) {
-      throw new BadRequestException('Вы не можете удалить чужой аккаунт');
+      throw new BadRequestException('You cannot delete someone elses account.');
     }
 
     // Удаляем пользователя
     await this.usersService.remove(email);
 
-
     return {
       statusCode: HttpStatus.OK,
-      message: 'Аккаунт успешно удален',
+      message: 'Account successfully deleted',
     };
   }
-
 
   @Get('activate/:token')
   async activateUser(@Param('token') token: string) {
     try {
       return await this.usersService.activateUserByToken(token);
     } catch (error) {
-      throw new BadRequestException('Не удалось активировать пользователя');
+      throw new BadRequestException('Failed to activate user');
     }
   }
 

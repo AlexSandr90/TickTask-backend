@@ -10,7 +10,8 @@ import {
   Post,
   Query,
   Req,
-  Res, UnauthorizedException,
+  Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -27,20 +28,21 @@ export class AuthController {
     private readonly authService: AuthService, // Ваш сервис аутентификации
   ) {}
   @Post('register')
-  @ApiOperation({ summary: 'Реєстрація нового користувача' })
+  @ApiOperation({ summary: 'New user registration' })
   @ApiResponse({
     status: 201,
-    description: 'Користувач успішно зареєстрований',
+    description: 'The user is successfully registered',
   })
   @ApiResponse({
     status: 400,
-    description: 'Користувач з таким email вже існує або паролі не співпадають',
+    description:
+      'A user with this email address already exists or the passwords do not match.',
   })
   async register(@Body() userDto: UserDto): Promise<UserWithoutPassword> {
     const { username, email, password, confirmPassword } = userDto;
 
     if (password !== confirmPassword) {
-      throw new BadRequestException('Пароли не совпадают');
+      throw new BadRequestException('Passwords do not match.');
     }
 
     return this.authService.register(
@@ -53,53 +55,56 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Авторизація користувача' })
-  @ApiResponse({ status: 200, description: 'Успішний вхід' })
-  @ApiResponse({ status: 401, description: 'Неправильний email або пароль' })
+  @ApiOperation({ summary: 'User authorization' })
+  @ApiResponse({ status: 200, description: 'Successful login' })
+  @ApiResponse({
+    status: 401,
+    description: 'Incorrect email address or password',
+  })
   async login(@Body() loginDto: LoginDto, @Res() res: Response) {
     try {
-      return await this.authService.login(loginDto.email, loginDto.password, res);
+      return await this.authService.login(
+        loginDto.email,
+        loginDto.password,
+        res,
+      );
     } catch (error) {
-
-      throw new UnauthorizedException('Неправильный email или пароль');
+      throw new UnauthorizedException('Incorrect email address or password');
     }
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: 'Оновлення токену' })
-  @ApiResponse({ status: 200, description: 'Токен оновлено' })
-  @ApiResponse({ status: 401, description: 'Недійсний токен' })
+  @ApiOperation({ summary: 'Token update' })
+  @ApiResponse({ status: 200, description: 'Token updated' })
+  @ApiResponse({ status: 401, description: 'Invalid token' })
   async refreshToken(
     @Body('email') email: string,
     @Body('refresh_token') refreshToken: string,
-    @Res() res: Response
+    @Res() res: Response,
   ): Promise<{ access_token: string }> {
     if (!email || !refreshToken) {
-      throw new BadRequestException('Email або refresh token не передані');
+      throw new BadRequestException('Email or refresh token not sent');
     }
 
     return this.authService.refreshToken(email, refreshToken, res);
   }
 
   @Post('logout')
-  @ApiOperation({ summary: 'Вихід користувача' })
-  @ApiResponse({ status: 200, description: 'Користувач успішно вийшов' })
+  @ApiOperation({ summary: 'User exit' })
+  @ApiResponse({ status: 200, description: 'User successfully logged out' })
   async logout(@Res() res: Response): Promise<void> {
     res.clearCookie('access_token');
-    res.status(200).send({ message: 'Вихід успішний' });
+    res.status(200).send({ message: 'Exit is successful' });
   }
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleLogin(@Req() req: Request, @Res() res: Response) {
-
-
     // Возвращаем данные пользователя в ответе
     return res.json({
       message: 'Google authentication successful',
       user: req.user,
     });
   }
-
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
@@ -114,31 +119,22 @@ export class AuthController {
         });
       }
 
-
-
       const processedUser = await this.authService.googleLogin(user);
       const { email, googleId } = processedUser;
       if (!googleId) {
-
         return res.status(400).json({
           error: 'User ID (sub) not found in processed user data',
           code: 'USER_ID_NOT_FOUND',
         });
       }
 
-
-
-
       const accessToken = generateJwtToken(email, googleId);
-
-
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
         secure: false,
         maxAge: 10 * 24 * 60 * 60 * 1000,
       });
-
 
       return res.json({
         message: 'Authentication successful',
@@ -153,7 +149,6 @@ export class AuthController {
       });
     }
   }
-
 
   @Post('request-password-reset')
   async requestPasswordReset(@Body('email') email: string): Promise<void> {

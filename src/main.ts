@@ -14,7 +14,11 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['https://localhost:3000', "http://localhost:3000", "http://localhost:4200"],
+    origin: [
+      'https://localhost:3000',
+      'http://localhost:3000',
+      'http://localhost:4200',
+    ],
     methods: 'GET,POST,PUT,DELETE,OPTIONS', // Разрешаем только GET, POST, PUT, DELETE методы
     allowedHeaders: 'Content-Type, Authorization', // Разрешаем только заголовки Content-Type и Authorization
     credentials: true, // Разрешаем отправку cookies
@@ -27,10 +31,9 @@ async function bootstrap() {
   const googleStrategy = new GoogleStrategy(prismaService);
   passport.use('google', googleStrategy.strategyConfig());
 
-  
   const config = new DocumentBuilder()
     .setTitle('TickTask API Documentation')
-    .setDescription('Документація до API')
+    .setDescription('Documentation to API')
     .setVersion('1.0')
     .addTag('auth')
     .addTag('users')

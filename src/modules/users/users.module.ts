@@ -19,10 +19,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         secret: APP_CONFIG.secretJWT,
         signOptions: { expiresIn: APP_CONFIG.expireJwt },
       }),
-    })
+    }),
   ],
   controllers: [UsersController],
   providers: [JwtStrategy, JwtAuthGuard, UsersService],
-  exports: [UsersService], //
+  exports: [UsersService],
 })
 export class UsersModule {}
