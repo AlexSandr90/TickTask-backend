@@ -1,10 +1,18 @@
-import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+} from 'class-validator';
 
 @ValidatorConstraint({ name: 'Match', async: false })
 export class MatchConstraint implements ValidatorConstraintInterface {
   validate(value: any, args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
-    const relatedValue = (args.object as Record<string, any>)[relatedPropertyName];
+    const relatedValue = (args.object as Record<string, any>)[
+      relatedPropertyName
+    ];
 
     // Логирование значений перед сравнением
     console.log(`value: ${value}, relatedValue: ${relatedValue}`);
@@ -12,7 +20,7 @@ export class MatchConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage(args: ValidationArguments) {
-    return `${args.property} має збігатися з полем ${args.constraints[0]}`;
+    return `${args.property} must match the field ${args.constraints[0]}`;
   }
 }
 export function Match(property: string, validationOptions?: ValidationOptions) {

@@ -52,7 +52,7 @@ export class UsersService {
       data: updateData,
     });
 
-    if (!user) throw new NotFoundException('Не удалось обновить пользователя');
+    if (!user) throw new NotFoundException('Failed to update user');
 
     const { refreshToken, passwordHash, ...safeUser } = user;
 
@@ -60,8 +60,8 @@ export class UsersService {
   }
   async remove(email: string) {
     const user = await this.prisma.user.delete({ where: { email } });
-    if (!user) throw new NotFoundException('Пользователь не найден');
-    return { message: 'Пользователь успешно удалён' };
+    if (!user) throw new NotFoundException('User not found');
+    return { message: 'User successfully deleted' };
   }
 
   async updateRefreshToken(
@@ -76,12 +76,12 @@ export class UsersService {
 
   async sendMagicLink(email: string) {
     if (!email) {
-      throw new BadRequestException('Email не передан');
+      throw new BadRequestException('Email not sent');
     }
 
     const user = await this.findByEmail(email);
     if (!user) {
-      throw new NotFoundException('Пользователь с таким email не найден');
+      throw new NotFoundException('No user with this email address found.');
     }
 
     const token = generateJwtToken(email, user.id);
@@ -90,7 +90,7 @@ export class UsersService {
     try {
       await sendVerificationEmail(email, 'Your Magic Link', magicLink);
     } catch (error) {
-      throw new InternalServerErrorException('Ошибка отправки письма');
+      throw new InternalServerErrorException('Error sending email');
     }
 
     return { message: 'Verification email sent.' };
@@ -98,7 +98,7 @@ export class UsersService {
 
   async activateUserByToken(token: string) {
     if (!token) {
-      throw new BadRequestException('Токен не передан');
+      throw new BadRequestException('Token not transferred');
     }
 
     let email: string;
@@ -108,17 +108,17 @@ export class UsersService {
       email = decoded.email;
     } catch (error) {
       throw new BadRequestException(
-        `Неверная ссылка или срок действия истёк. Ошибка: ${error.message}`,
+        `Invalid or expired link. Error: ${error.message}`,
       );
     }
 
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new NotFoundException('Пользователь не найден');
+      throw new NotFoundException('User not found');
     }
 
     if (user.isActive) {
-      throw new BadRequestException('Пользователь уже активирован');
+      throw new BadRequestException('The user is already activated');
     }
 
     try {
@@ -129,9 +129,7 @@ export class UsersService {
 
       return { message: 'User successfully activated', user: updatedUser };
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Не удалось активировать пользователя',
-      );
+      throw new InternalServerErrorException('Failed to activate user');
     }
   }
 
@@ -195,7 +193,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Неверный или устаревший токен');
+      throw new NotFoundException('Invalid or outdated token');
     }
 
     return user;
