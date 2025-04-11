@@ -5,23 +5,23 @@ import { TasksRepository } from './tasks.repository';
 export class TasksService {
   constructor(private readonly tasksRepository: TasksRepository) {}
 
-  async getAllColumns() {
+  async getAllTasks() {
     return this.tasksRepository.findAll();
   }
 
-  async findColumnById(id: string) {
+  async findTaskById(id: string) {
     return this.tasksRepository.findOne(id);
   }
 
-  async createColumn(title: string, description: string, columnId: string) {
+  async createTask(title: string, description: string, columnId: string) {
     return this.tasksRepository.create({ title, description, columnId });
   }
 
-  async updateColumn(id: string, title?: string, description?: string) {
+  async updateTask(id: string, title?: string, description?: string) {
     return this.tasksRepository.update(id, { title, description });
   }
 
-  async deleteColumn(id: string) {
+  async deleteTask(id: string) {
     return this.tasksRepository.delete(id);
   }
 }

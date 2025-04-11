@@ -14,20 +14,20 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  async getAllColumns() {
-    return this.tasksService.getAllColumns();
+  async getAllTasks() {
+    return this.tasksService.getAllTasks();
   }
 
   @Get(':id')
-  async getColumnById(@Param('id') id: string) {
-    return this.tasksService.findColumnById(id);
+  async getTaskById(@Param('id') id: string) {
+    return this.tasksService.findTaskById(id);
   }
 
   @Post()
-  async createColumn(
+  async createTask(
     @Body() body: { title: string; description: string; columnId: string },
   ) {
-    return this.tasksService.createColumn(
+    return this.tasksService.createTask(
       body.title,
       body.description,
       body.columnId,
@@ -35,15 +35,15 @@ export class TasksController {
   }
 
   @Put(':id')
-  async updateColumn(
+  async updateTask(
     @Param('id') id: string,
     @Body() body: { title?: string; description?: string },
   ) {
-    return this.tasksService.updateColumn(id, body.title, body.description);
+    return this.tasksService.updateTask(id, body.title, body.description);
   }
 
   @Delete(':id')
-  async deleteColumn(@Param('id') id: string) {
-    return this.tasksService.deleteColumn(id);
+  async deleteTask(@Param('id') id: string) {
+    return this.tasksService.deleteTask(id);
   }
 }
