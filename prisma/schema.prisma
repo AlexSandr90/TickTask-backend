@@ -21,7 +21,7 @@ model User {
   refreshToken       String?
   googleId           String?   @unique
   passwordResetToken String?
-  WorkDesk           Board[]
+  boards           Board[]
 }
 
 model Board {
@@ -43,7 +43,7 @@ model Column {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  Task      Task[]
+  tasks      Task[]
 }
 
 model Task {
