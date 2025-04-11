@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "typeRoots": ["@types", "node_modules/@types"],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -17,6 +18,6 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "strict": true
+    "strict": false
   }
 }
