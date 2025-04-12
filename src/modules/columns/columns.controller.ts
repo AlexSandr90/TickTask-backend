@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ColumnsService } from './columns.service';
 
 @Controller('columns')
@@ -16,22 +24,16 @@ export class ColumnsController {
   }
 
   @Post()
-  async createColumn(
-    @Body() body: { title: string; order: number; boardId: string },
-  ) {
-    return this.columnsService.createColumn(
-      body.title,
-      body.order,
-      body.boardId,
-    );
+  async createColumn(@Body() body: { title: string; boardId: string }) {
+    return this.columnsService.createColumn(body.title, body.boardId);
   }
 
   @Put(':id')
   async updateColumn(
     @Param('id') id: string,
-    @Body() body: { title?: string; order?: number },
+    @Body() body: { title?: string },
   ) {
-    return this.columnsService.updateColumn(id, body.title, body.order);
+    return this.columnsService.updateColumn(id, body.title);
   }
 
   @Delete(':id')
