@@ -13,12 +13,12 @@ export class ColumnsService {
     return this.columnRepository.findOne(id);
   }
 
-  async createColumn(title: string, order: number, boardId: string) {
-    return this.columnRepository.create({ title, order, boardId });
+  async createColumn(title: string,  boardId: string) {
+    return this.columnRepository.create({ title, boardId });
   }
 
-  async updateColumn(id: string, title?: string, order?: number) {
-    return this.columnRepository.update(id, { title, order });
+  async updateColumn(id: string, title?: string,) {
+    return this.columnRepository.update(id, { title });
   }
 
   async deleteColumn(id: string) {
