@@ -99,7 +99,6 @@ export class AuthController {
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleLogin(@Req() req: Request, @Res() res: Response) {
-    // Возвращаем данные пользователя в ответе
     return res.json({
       message: 'Google authentication successful',
       user: req.user,
@@ -155,7 +154,6 @@ export class AuthController {
     await this.authService.requestPasswordReset(email);
   }
 
-  // Сброс пароля
   @Post('reset-password')
   async resetPassword(
     @Query('token') token: string,
