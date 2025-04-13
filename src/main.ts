@@ -15,6 +15,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: [
+      "https://taskcraft.click",
       'https://localhost:3000',
       'http://localhost:3000',
       'http://localhost:4200',
