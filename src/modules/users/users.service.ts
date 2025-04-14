@@ -85,10 +85,13 @@ export class UsersService {
     }
 
     const token = generateJwtToken(email, user.id);
-    const magicLink = `https://ticktask-backend.onrender.com/users/activate/${token}`;
+    const magicLinks = [
+      `https://taskcraft.click/activate/${token}`,
+      `http://localhost:3000/activate/${token}`,
+    ];
 
     try {
-      await sendVerificationEmail(email, 'Your Magic Link', magicLink);
+      await sendVerificationEmail(email, 'Your Magic Link', magicLinks.join('\n'));
     } catch (error) {
       throw new InternalServerErrorException('Error sending email');
     }
