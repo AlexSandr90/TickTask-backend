@@ -1,4 +1,4 @@
-import { ApiOperation, ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class ApiErrorResponseDto {
   @ApiProperty({ example: 400 })
