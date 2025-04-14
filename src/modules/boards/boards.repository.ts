@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { CreateBoardDto } from './dto/create-board.dto';
+import { UpdateBoardDto } from './dto/update-board.dto';
 
 @Injectable()
 export class BoardsRepository {
@@ -13,11 +15,7 @@ export class BoardsRepository {
     return this.prisma.board.findUnique({ where: { id } });
   }
 
-  async create(boardData: {
-    title: string;
-    description: string;
-    userId: string;
-  }) {
+  async create(boardData: CreateBoardDto) {
     return this.prisma.board.create({
       data: {
         title: boardData.title,
@@ -27,7 +25,7 @@ export class BoardsRepository {
     });
   }
 
-  async update(id: string, data: { title?: string; description?: string }) {
+  async update(id: string, data: UpdateBoardDto) {
     return this.prisma.board.update({ where: { id }, data });
   }
 

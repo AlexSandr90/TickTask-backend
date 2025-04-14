@@ -60,7 +60,7 @@ export class ColumnsController {
   @Post()
   @ApiOperation({ summary: 'Create column' })
   @ApiResponse({
-    status: 200,
+    status: 201,
     description: 'The user created column',
   })
   @ApiResponseBadRequestDecorator(

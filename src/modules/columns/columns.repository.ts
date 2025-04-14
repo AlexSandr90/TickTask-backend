@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ColumnDto } from './dto/column.dto';
+import { CreateColumnDto } from './dto/create-column.dto';
 
 @Injectable()
 export class ColumnsRepository {
@@ -14,7 +15,7 @@ export class ColumnsRepository {
     return this.prisma.column.findUnique({ where: { id } });
   }
 
-  async create(columnData: { title: string; boardId: string }) {
+  async create(columnData: CreateColumnDto) {
     return this.prisma.column.create({
       data: {
         title: columnData.title,
