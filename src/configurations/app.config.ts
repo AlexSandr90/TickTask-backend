@@ -7,4 +7,5 @@ export const APP_CONFIG = {
   secretJwtRefresh: process.env.SECRET_REFRESH,
   expireJwt: process.env.EXPIRE_JWT,
   expireJwtRefresh: process.env.EXPIRE_JWT_REFRESH,
+
 };

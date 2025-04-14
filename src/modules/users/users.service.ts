@@ -85,13 +85,12 @@ export class UsersService {
     }
 
     const token = generateJwtToken(email, user.id);
-    const magicLinks = [
-      `https://taskcraft.click/activate/${token}`,
-      `http://localhost:3000/activate/${token}`,
-    ];
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+
+    const magicLink = `${baseUrl}/activate/${token}`;
 
     try {
-      await sendVerificationEmail(email, 'Your Magic Link', magicLinks.join('\n'));
+      await sendVerificationEmail(email, 'Your Magic Link', magicLink);
     } catch (error) {
       throw new InternalServerErrorException('Error sending email');
     }
