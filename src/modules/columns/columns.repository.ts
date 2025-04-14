@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { ColumnDto } from './dto/column.dto';
 
 @Injectable()
 export class ColumnsRepository {
@@ -22,7 +23,7 @@ export class ColumnsRepository {
     });
   }
 
-  async update(id: string, data: { title?: string; }) {
+  async update(id: string, data: ColumnDto) {
     return this.prisma.column.update({ where: { id }, data });
   }
 
