@@ -71,9 +71,10 @@ export class AuthService {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: false, // Убедитесь, что в продакшн-режиме будет true
+      secure: true, // Убедитесь, что в продакшн-режиме будет true
       maxAge: 10 * 24 * 60 * 60 * 1000, // 1 час
       path: '/',
+      sameSite: 'None',
     });
 
     return res.status(HttpStatus.OK).json({ message: 'Successful login' });
@@ -95,7 +96,7 @@ export class AuthService {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       maxAge: 10 * 24 * 60 * 60 * 1000,
       sameSite: 'None',
     });
