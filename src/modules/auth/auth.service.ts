@@ -121,39 +121,38 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string): Promise<void> {
-    console.log(`[requestPasswordReset] Запрос от email: ${email}`);
+
 
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      console.warn(`[requestPasswordReset] Пользователь не найден: ${email}`);
+
       throw new BadRequestException('No user with this email address found.');
     }
 
     const resetToken = randomBytes(32).toString('hex');
     const resetLink = `https://taskcraft.click/reset-password?token=${resetToken}`;
-    console.log(`[requestPasswordReset] Токен создан: ${resetToken}`);
-    console.log(`[requestPasswordReset] Ссылка для сброса: ${resetLink}`);
+
 
     await this.usersService.updatePasswordResetToken(user.id, resetToken);
-    console.log(`[requestPasswordReset] Токен сохранён в БД для пользователя ID: ${user.id}`);
+
 
     await sendPasswordResetEmail(email, 'Password reset', resetLink);
-    console.log(`[requestPasswordReset] Email отправлен: ${email}`);
+
   }
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    console.log(`[resetPassword] Попытка сброса с токеном: ${token}`);
+
 
     const user = await this.usersService.findByPasswordResetToken(token);
     if (!user) {
-      console.warn(`[resetPassword] Токен недействителен или пользователь не найден`);
+
       throw new BadRequestException('Password reset token is invalid or expired');
     }
 
     await this.usersService.updatePassword(user.id, newPassword);
-    console.log(`[resetPassword] Пароль обновлён`);
+
 
     await this.usersService.updatePasswordResetToken(user.id, '');
-    console.log(`[resetPassword] Токен сброса очищен`);
+
   }
 
 }

@@ -200,4 +200,14 @@ export class UsersService {
 
     return user;
   }
+  async updateAvatarPath(userId: string, avatarPath: string) {
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: { avatarPath }, // Обновляем путь к аватару
+      }); // Возвращаем обновленного пользователя
+    } catch (error) {
+      throw new InternalServerErrorException('Error updating avatar path');
+    }
+  }
 }
