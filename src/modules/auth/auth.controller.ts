@@ -131,20 +131,11 @@ export class AuthController {
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: true,
+        secure: false,
         sameSite: 'none',
         maxAge: 10 * 24 * 60 * 60 * 1000,
       });
-      const origin = req.headers.origin || req.headers.referer;
-
-      // если origin содержит localhost — редиректим на localhost
-      const isLocalhost = origin?.includes('localhost');
-
-      const redirectUrl = isLocalhost
-        ? 'https://localhost:3000'
-        : 'https://taskcraft.click';
-
-      return res.redirect(redirectUrl);
+      return res.redirect(`http://localhost:3000/home`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
