@@ -135,11 +135,7 @@ export class AuthController {
         maxAge: 10 * 24 * 60 * 60 * 1000,
       });
 
-      return res.json({
-        message: 'Authentication successful',
-        user: processedUser,
-        access_token: accessToken,
-      });
+      return res.redirect(`https://taskcraft.click`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
