@@ -98,11 +98,8 @@ export class AuthController {
   }
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  googleLogin(@Req() req: Request, @Res() res: Response) {
-    return res.json({
-      message: 'Google authentication successful',
-      user: req.user,
-    });
+  googleLogin() {
+    // AuthGuard сам редиректит на Google, ничего не нужно возвращать
   }
 
   @Get('google/callback')
@@ -131,11 +128,11 @@ export class AuthController {
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: false,
+        secure: true,
         sameSite: 'none',
         maxAge: 10 * 24 * 60 * 60 * 1000,
       });
-      return res.redirect(`http://localhost:3000/home`);
+      return res.redirect(`https://taskcraft.click`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
