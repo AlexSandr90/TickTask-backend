@@ -93,9 +93,22 @@ export class AuthController {
   @ApiOperation({ summary: 'User exit' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   async logout(@Res() res: Response): Promise<void> {
-    res.clearCookie('access_token');
-    res.status(200).send({ message: 'Exit is successful' });
+    try {
+
+      res.clearCookie('access_token', {
+        httpOnly: true,
+        secure: true, // Убедитесь, что это будет работать только с HTTPS
+        sameSite: 'none', // Обеспечивает работу с куки при кросс-доменных запросах
+      });
+
+      // Отправляем успешный ответ на логаут
+      res.status(200).send({ message: 'Exit is successful' });
+    } catch (error) {
+      console.error('Logout Error:', error);
+      res.status(500).send({ message: 'Server error during logout' });
+    }
   }
+  
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleLogin() {
