@@ -9,6 +9,7 @@ import { APP_CONFIG } from '../../configurations/app.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
+import { UsersRepository } from './users.repository';
 
 @Module({
   imports: [
@@ -23,7 +24,13 @@ import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
     }),
   ],
   controllers: [UsersController],
-  providers: [JwtStrategy, JwtAuthGuard, UsersService,  SupabaseAvatarService],
-  exports: [UsersService],
+  providers: [
+    JwtStrategy,
+    JwtAuthGuard,
+    UsersService,
+    UsersRepository,
+    SupabaseAvatarService,
+  ],
+  exports: [UsersService, UsersRepository],
 })
 export class UsersModule {}

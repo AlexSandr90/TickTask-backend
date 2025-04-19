@@ -8,10 +8,12 @@ import { GoogleStrategy } from './strategy/google.strategy';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { APP_CONFIG } from '../../configurations/app.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     PrismaModule,
+    UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -19,7 +21,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         secret: APP_CONFIG.secretJWT,
         signOptions: { expiresIn: APP_CONFIG.expireJwt },
       }),
-    })
+    }),
   ],
   controllers: [AuthController],
   providers: [
