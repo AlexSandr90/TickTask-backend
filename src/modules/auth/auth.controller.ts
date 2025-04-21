@@ -162,7 +162,7 @@ export class AuthController {
         sameSite: 'none',
         maxAge: 10 * 24 * 60 * 60 * 1000,
       });
-      return res.redirect(`https://taskcraft.click`);
+      return res.redirect(`https://taskcraft.click/home`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
