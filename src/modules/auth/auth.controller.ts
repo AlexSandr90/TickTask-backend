@@ -1,18 +1,18 @@
 import { Request } from 'express';
 import { Response } from 'express';
 import {
-  BadRequestException,
-  Body,
-  Controller,
   Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
   Req,
   Res,
-  UnauthorizedException,
+  Body,
+  Post,
+  Query,
+  HttpCode,
   UseGuards,
+  HttpStatus,
+  Controller,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -21,14 +21,22 @@ import { UserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { generateJwtToken } from '../../common/utils/jwt.util';
+import {
+  ApiResponseNotFoundDecorator,
+  ApiResponseForbiddenDecorator,
+  ApiResponseBadRequestDecorator,
+  ApiResponseUnauthorizedDecorator,
+  ApiResponseInternalServerErrorDecorator,
+} from '../../common/decorators/swagger';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService, // Ваш сервис аутентификации
   ) {}
+
   @Post('register')
-  @ApiOperation({ summary: 'New user registration' })
+  @ApiOperation({ summary: 'Registration new User' })
   @ApiResponse({
     status: 201,
     description: 'The user is successfully registered',
@@ -38,6 +46,8 @@ export class AuthController {
     description:
       'A user with this email address already exists or the passwords do not match.',
   })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseInternalServerErrorDecorator()
   async register(@Body() userDto: UserDto): Promise<UserWithoutPassword> {
     const { username, email, password, confirmPassword } = userDto;
 
@@ -61,6 +71,10 @@ export class AuthController {
     status: 401,
     description: 'Incorrect email address or password',
   })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseNotFoundDecorator('User not found')
+  @ApiResponseInternalServerErrorDecorator()
   async login(@Body() loginDto: LoginDto, @Res() res: Response) {
     try {
       return await this.authService.login(
@@ -76,7 +90,11 @@ export class AuthController {
   @Post('refresh')
   @ApiOperation({ summary: 'Token update' })
   @ApiResponse({ status: 200, description: 'Token updated' })
-  @ApiResponse({ status: 401, description: 'Invalid token' })
+  @ApiResponseUnauthorizedDecorator('Invalid token')
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid task ID or missing param',
+  )
+  @ApiResponseInternalServerErrorDecorator()
   async refreshToken(
     @Body('email') email: string,
     @Body('refresh_token') refreshToken: string,
@@ -94,7 +112,6 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   async logout(@Res() res: Response): Promise<void> {
     try {
-
       res.clearCookie('access_token', {
         httpOnly: true,
         secure: true, // Убедитесь, что это будет работать только с HTTPS
@@ -108,7 +125,7 @@ export class AuthController {
       res.status(500).send({ message: 'Server error during logout' });
     }
   }
-  
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   googleLogin() {
