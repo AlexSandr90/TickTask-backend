@@ -9,6 +9,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private usersService: UsersService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
         (req) => req?.cookies?.access_token,
       ]),
       secretOrKey: APP_CONFIG.secretJWT as string,
@@ -16,6 +17,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    return await this.usersService.findOne(payload.email);
+    const user = await this.usersService.findOne(payload.email);
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    };
   }
 }

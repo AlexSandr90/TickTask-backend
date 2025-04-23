@@ -18,12 +18,15 @@ import {
 } from '../../common/decorators/swagger';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
+import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
+import { CurrentUserDecorator } from '../../common/decorators/current-user.decorator';
 
 @Controller('boards')
 export class BoardsController {
   constructor(private readonly boardsService: BoardsService) {}
 
   @Get()
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Get all boards' })
   @ApiResponse({ status: 200, description: 'The User get all boards' })
   @ApiResponseBadRequestDecorator(
@@ -33,11 +36,12 @@ export class BoardsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Boards not found')
   @ApiResponseInternalServerErrorDecorator()
-  async getAllBoards() {
-    return this.boardsService.getAllBoards();
+  async getAllBoards(@CurrentUserDecorator() user) {
+    return this.boardsService.getAllBoards(user.id);
   }
 
   @Get(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Get board for User ID' })
   @ApiResponse({ status: 200, description: 'The User get Board for User ID' })
   @ApiResponseBadRequestDecorator(
@@ -52,6 +56,7 @@ export class BoardsController {
   }
 
   @Post()
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'User created board' })
   @ApiResponse({ status: 201, description: 'The User create new Board' })
   @ApiResponseBadRequestDecorator(
@@ -70,6 +75,7 @@ export class BoardsController {
   }
 
   @Put(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'User updated Board for User ID' })
   @ApiResponse({
     status: 200,
@@ -87,6 +93,7 @@ export class BoardsController {
   }
 
   @Delete(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'User deleted Board for User ID' })
   @ApiResponse({ status: 200, description: 'The User delete Board' })
   @ApiResponseBadRequestDecorator(
