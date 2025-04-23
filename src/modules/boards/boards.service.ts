@@ -5,8 +5,8 @@ import { BoardsRepository } from './boards.repository';
 export class BoardsService {
   constructor(private readonly boardsRepository: BoardsRepository) {}
 
-  async getAllBoards() {
-    return this.boardsRepository.findAll();
+  async getAllBoards(userId: string) {
+    return this.boardsRepository.findAll(userId);
   }
 
   async findBoardById(id: string) {

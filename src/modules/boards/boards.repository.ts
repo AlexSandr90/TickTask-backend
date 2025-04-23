@@ -7,8 +7,8 @@ import { UpdateBoardDto } from './dto/update-board.dto';
 export class BoardsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.board.findMany();
+  async findAll(userId: string) {
+    return this.prisma.board.findMany({ where: { userId } });
   }
 
   async findOne(id: string) {
