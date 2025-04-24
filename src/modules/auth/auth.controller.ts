@@ -161,6 +161,7 @@ export class AuthController {
         secure: true,
         sameSite: 'none',
         maxAge: 10 * 24 * 60 * 60 * 1000,
+        domain: '.taskcraft.click',
       });
       return res.redirect(`https://taskcraft.click/home`);
     } catch (error) {
