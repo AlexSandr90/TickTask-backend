@@ -151,6 +151,7 @@ export class AuthController {
         httpOnly: true,
         secure: true,  // Убедитесь, что ваше приложение работает по HTTPS
         sameSite: 'none',
+        domain: 'taskcraft.click', // Убедись, что куки доступны для всех поддоменов
         maxAge: 10 * 24 * 60 * 60 * 1000,  // Токен будет действителен 10 дней
       });
 
