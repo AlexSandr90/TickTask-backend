@@ -195,7 +195,6 @@ export class AuthController {
     }
 
     try {
-      // Сохраняем токен в куки (пример для работы с JWT)
       res.cookie('access_token', accessToken, {
         httpOnly: true,   // Безопасное хранение токена в куках
         secure: true,     // Обязательно включайте, если ваше приложение работает по HTTPS
