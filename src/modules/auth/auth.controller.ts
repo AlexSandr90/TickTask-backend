@@ -126,6 +126,13 @@ export class AuthController {
     }
   }
 
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleLogin(@Req() req: Request, @Res() res: Response) {
+    console.log('Google login request received');
+  }
+
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
