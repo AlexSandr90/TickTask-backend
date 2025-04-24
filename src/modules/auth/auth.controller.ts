@@ -126,6 +126,13 @@ export class AuthController {
     }
   }
 
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleLogin(@Req() req: Request, @Res() res: Response) {
+    console.log('Google login request received');
+  }
+
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
@@ -195,7 +202,6 @@ export class AuthController {
     }
 
     try {
-      // Сохраняем токен в куки (пример для работы с JWT)
       res.cookie('access_token', accessToken, {
         httpOnly: true,   // Безопасное хранение токена в куках
         secure: true,     // Обязательно включайте, если ваше приложение работает по HTTPS
