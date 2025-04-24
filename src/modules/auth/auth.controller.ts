@@ -125,7 +125,11 @@ export class AuthController {
       res.status(500).send({ message: 'Server error during logout' });
     }
   }
-
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleLogin(@Req() req: Request, @Res() res: Response) {
+    // логика аутентификации через Google
+  }
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
