@@ -127,36 +127,35 @@ export class AuthController {
   }
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleLogin(@Req() req: Request, @Res() res: Response) {
-    // логика аутентификации через Google
+  googleLogin() {
+    
   }
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
     try {
-      const user = req.user;
-
-      if (!user) {
-        return res.status(400).json({
-          error: 'User ID not found in Google callback',
-          code: 'USER_ID_NOT_FOUND',
-        });
-      }
-
+      const user = req.user;  // Получаем пользователя из запроса (после успешной аутентификации через Google)
       const processedUser = await this.authService.googleLogin(user);
       const { email, googleId } = processedUser;
 
       if (!googleId) {
         return res.status(400).json({
           error: 'User ID (sub) not found in processed user data',
-          code: 'USER_ID_NOT_FOUND',
         });
       }
 
       const accessToken = generateJwtToken(email, googleId);
 
-      // Вместо куки отправляем токен в URL параметре
-      return res.redirect(`https://taskcraft.click/oauth-popup?access_token=${accessToken}`);
+      // Записываем токен в куки
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: true,  // Убедитесь, что ваше приложение работает по HTTPS
+        sameSite: 'none',
+        maxAge: 10 * 24 * 60 * 60 * 1000,  // Токен будет действителен 10 дней
+      });
+
+      // Перенаправление на домашнюю страницу
+      return res.redirect(`https://taskcraft.click/home`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
@@ -165,7 +164,6 @@ export class AuthController {
       });
     }
   }
-
 
   @Post('request-password-reset')
   async requestPasswordReset(@Body('email') email: string): Promise<void> {
@@ -180,40 +178,4 @@ export class AuthController {
     await this.authService.resetPassword(token, newPassword);
   }
 
-  @Get('oauth-popup')
-  @ApiOperation({ summary: 'OAuth popup' })
-  @ApiResponse({
-    status: 200,
-    description: 'Access token processed successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request, missing or invalid access token',
-  })
-  async oauthPopup(@Query('access_token') accessToken: string, @Res() res: Response) {
-    if (!accessToken) {
-      return res.status(400).json({
-        error: 'Access token not provided',
-        code: 'TOKEN_NOT_PROVIDED',
-      });
-    }
-
-    try {
-      // Сохраняем токен в куки (пример для работы с JWT)
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,   // Безопасное хранение токена в куках
-        secure: true,     // Обязательно включайте, если ваше приложение работает по HTTPS
-        sameSite: 'none', // Для кросс-доменных запросов
-        maxAge: 3600000,  // Время жизни куки (1 час, например)
-      });
-
-      return res.status(200).json({ message: 'Token received and saved successfully' });
-    } catch (error) {
-      console.error('OAuth Popup Error:', error);
-      return res.status(500).json({
-        error: 'Server error',
-        code: 'SERVER_ERROR',
-      });
-    }
-  }
 }
