@@ -175,4 +175,41 @@ export class AuthController {
   ): Promise<void> {
     await this.authService.resetPassword(token, newPassword);
   }
+
+  @Get('oauth-popup')
+  @ApiOperation({ summary: 'OAuth popup' })
+  @ApiResponse({
+    status: 200,
+    description: 'Access token processed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request, missing or invalid access token',
+  })
+  async oauthPopup(@Query('access_token') accessToken: string, @Res() res: Response) {
+    if (!accessToken) {
+      return res.status(400).json({
+        error: 'Access token not provided',
+        code: 'TOKEN_NOT_PROVIDED',
+      });
+    }
+
+    try {
+      // Сохраняем токен в куки (пример для работы с JWT)
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,   // Безопасное хранение токена в куках
+        secure: true,     // Обязательно включайте, если ваше приложение работает по HTTPS
+        sameSite: 'none', // Для кросс-доменных запросов
+        maxAge: 3600000,  // Время жизни куки (1 час, например)
+      });
+
+      return res.status(200).json({ message: 'Token received and saved successfully' });
+    } catch (error) {
+      console.error('OAuth Popup Error:', error);
+      return res.status(500).json({
+        error: 'Server error',
+        code: 'SERVER_ERROR',
+      });
+    }
+  }
 }
