@@ -126,12 +126,6 @@ export class AuthController {
     }
   }
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  googleLogin() {
-    // AuthGuard сам редиректит на Google, ничего не нужно возвращать
-  }
-
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
@@ -147,6 +141,7 @@ export class AuthController {
 
       const processedUser = await this.authService.googleLogin(user);
       const { email, googleId } = processedUser;
+
       if (!googleId) {
         return res.status(400).json({
           error: 'User ID (sub) not found in processed user data',
@@ -156,14 +151,8 @@ export class AuthController {
 
       const accessToken = generateJwtToken(email, googleId);
 
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        maxAge: 10 * 24 * 60 * 60 * 1000,
-        domain: '.taskcraft.click',
-      });
-      return res.redirect(`https://taskcraft.click/home`);
+      // Вместо куки отправляем токен в URL параметре
+      return res.redirect(`https://taskcraft.click/oauth-popup?access_token=${accessToken}`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
@@ -172,6 +161,7 @@ export class AuthController {
       });
     }
   }
+
 
   @Post('request-password-reset')
   async requestPasswordReset(@Body('email') email: string): Promise<void> {
