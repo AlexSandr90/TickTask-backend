@@ -116,6 +116,7 @@ export class AuthController {
         httpOnly: true,
         secure: true, // Убедитесь, что это будет работать только с HTTPS
         sameSite: 'none', // Обеспечивает работу с куки при кросс-доменных запросах
+        domain: 'taskcraft.click',
       });
 
       // Отправляем успешный ответ на логаут
