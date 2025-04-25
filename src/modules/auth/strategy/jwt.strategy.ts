@@ -17,12 +17,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.usersService.findOne(payload.email);
+    try {
+      const user = await this.usersService.findOne(payload.email);
 
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-    };
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      };
+    } catch (error) {
+      console.error('JWT validation error ', error);
+      throw error;
+    }
   }
 }

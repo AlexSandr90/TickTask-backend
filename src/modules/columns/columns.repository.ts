@@ -7,8 +7,8 @@ import { CreateColumnDto } from './dto/create-column.dto';
 export class ColumnsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.column.findMany();
+  async findAll(boardId: string) {
+    return this.prisma.column.findMany({ where: { boardId } });
   }
 
   async findOne(id: string) {
