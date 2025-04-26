@@ -4,8 +4,10 @@ import {
   Post,
   Body,
   Param,
+  Query,
   Delete,
   Controller,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ColumnsService } from './columns.service';
@@ -18,6 +20,7 @@ import {
 } from '../../common/decorators/swagger';
 import { ColumnDto } from './dto/column.dto';
 import { CreateColumnDto } from './dto/create-column.dto';
+import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
 
 @Controller('columns')
 export class ColumnsController {
@@ -36,11 +39,16 @@ export class ColumnsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Columns not found')
   @ApiResponseInternalServerErrorDecorator()
-  async getAllColumns() {
-    return this.columnsService.getAllColumns();
+  async getAllColumns(@Query('boardId') boardId: string) {
+    if (!boardId) {
+      throw new BadRequestException('Missing boardId');
+    }
+
+    return this.columnsService.getAllColumns(boardId);
   }
 
   @Get(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Get column by ID' })
   @ApiResponse({
     status: 200,
@@ -58,6 +66,7 @@ export class ColumnsController {
   }
 
   @Post()
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Create column' })
   @ApiResponse({
     status: 201,
@@ -75,6 +84,7 @@ export class ColumnsController {
   }
 
   @Put(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Change column by ID' })
   @ApiResponse({
     status: 200,
@@ -92,6 +102,7 @@ export class ColumnsController {
   }
 
   @Delete(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Delete column by ID' })
   @ApiResponse({
     status: 200,
