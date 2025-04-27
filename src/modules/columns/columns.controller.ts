@@ -27,6 +27,7 @@ export class ColumnsController {
   constructor(private readonly columnsService: ColumnsService) {}
 
   @Get()
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Get all columns' })
   @ApiResponse({
     status: 200,

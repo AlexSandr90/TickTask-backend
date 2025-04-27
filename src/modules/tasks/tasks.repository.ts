@@ -7,8 +7,8 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TasksRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.task.findMany();
+  async findAll(columnId: string) {
+    return this.prisma.task.findMany({ where: { columnId } });
   }
 
   async findOne(id: string) {

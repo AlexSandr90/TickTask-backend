@@ -4,8 +4,10 @@ import {
   Post,
   Body,
   Param,
+  Query,
   Delete,
   Controller,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
@@ -18,12 +20,14 @@ import {
 } from '../../common/decorators/swagger';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Get all tasks' })
   @ApiResponse({
     status: 200,
@@ -36,11 +40,16 @@ export class TasksController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator('Tasks not found')
   @ApiResponseInternalServerErrorDecorator()
-  async getAllTasks() {
-    return this.tasksService.getAllTasks();
+  async getAllTasks(@Query('columnId') columnId: string) {
+    if (!columnId) {
+      throw new BadRequestException('Missing columnId');
+    }
+
+    return this.tasksService.getAllTasks(columnId);
   }
 
   @Get(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Get task for Column ID' })
   @ApiResponse({
     status: 200,
@@ -58,6 +67,7 @@ export class TasksController {
   }
 
   @Post()
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Create task for Column ID' })
   @ApiResponse({
     status: 201,
@@ -79,6 +89,7 @@ export class TasksController {
   }
 
   @Put(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Update task for Column ID' })
   @ApiResponse({
     status: 200,
@@ -96,6 +107,7 @@ export class TasksController {
   }
 
   @Delete(':id')
+  @JwtAuthDecorator()
   @ApiOperation({ summary: 'Delete task for Column ID' })
   @ApiResponse({
     status: 200,
