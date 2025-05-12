@@ -6,9 +6,10 @@ import { UsersService } from '../users/users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { APP_CONFIG } from '../../configurations/app.config';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
+import { AuthRepository } from './auth.repository';
 
 @Module({
   imports: [
@@ -18,8 +19,8 @@ import { UsersModule } from '../users/users.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async () => ({
-        secret: APP_CONFIG.secretJWT,
-        signOptions: { expiresIn: APP_CONFIG.expireJwt },
+        secret: AUTH_CONFIG.secretJWT,
+        signOptions: { expiresIn: AUTH_CONFIG.expireJwt },
       }),
     }),
   ],
@@ -28,6 +29,7 @@ import { UsersModule } from '../users/users.module';
     AuthService,
     UsersService,
     GoogleStrategy,
+    AuthRepository,
     PrismaService,
     {
       provide: 'GoogleStrategy',
