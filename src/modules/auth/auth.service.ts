@@ -90,7 +90,7 @@ export class AuthService {
       sameSite: 'None',
     });
 
-    res.cookie('refresh_token', accessToken, {
+    res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: true,
       maxAge: AUTH_CONFIG.expireJwtRefresh,
