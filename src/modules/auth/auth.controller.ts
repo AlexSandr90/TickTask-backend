@@ -104,7 +104,7 @@ export class AuthController {
       throw new BadRequestException('Email or refresh token not sent');
     }
 
-    return this.authService.refreshToken(email, refreshToken, res);
+    return this.authService.refreshToken(refreshToken, res);
   }
 
   @Post('logout')
@@ -126,16 +126,16 @@ export class AuthController {
       res.status(500).send({ message: 'Server error during logout' });
     }
   }
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  googleLogin() {
-    
-  }
+  googleLogin() {}
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
     try {
-      const user = req.user;  // Получаем пользователя из запроса (после успешной аутентификации через Google)
+      const user = req.user; // Получаем пользователя из запроса (после успешной аутентификации через Google)
       const processedUser = await this.authService.googleLogin(user);
       const { email, googleId } = processedUser;
 
@@ -150,10 +150,10 @@ export class AuthController {
       // Записываем токен в куки
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: true,  // Убедитесь, что ваше приложение работает по HTTPS
+        secure: true, // Убедитесь, что ваше приложение работает по HTTPS
         sameSite: 'none',
         domain: 'taskcraft.click', // Убедись, что куки доступны для всех поддоменов
-        maxAge: 10 * 24 * 60 * 60 * 1000,  // Токен будет действителен 10 дней
+        maxAge: 10 * 24 * 60 * 60 * 1000, // Токен будет действителен 10 дней
       });
 
       // Перенаправление на домашнюю страницу
@@ -179,5 +179,4 @@ export class AuthController {
   ): Promise<void> {
     await this.authService.resetPassword(token, newPassword);
   }
-
 }

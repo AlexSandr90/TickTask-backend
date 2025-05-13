@@ -5,7 +5,7 @@ import { PrismaModule } from '../../../prisma/prisma.module';
 import { JwtStrategy } from '../auth/strategy/jwt.strategy';
 
 import { JwtModule } from '@nestjs/jwt';
-import { APP_CONFIG } from '../../configurations/app.config';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
@@ -18,8 +18,8 @@ import { UsersRepository } from './users.repository';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async () => ({
-        secret: APP_CONFIG.secretJWT,
-        signOptions: { expiresIn: APP_CONFIG.expireJwt },
+        secret: AUTH_CONFIG.secretJWT,
+        signOptions: { expiresIn: AUTH_CONFIG.expireJwt },
       }),
     }),
   ],

@@ -1,24 +1,26 @@
 import {
-  BadRequestException,
-  HttpStatus,
   Injectable,
-  Response,
   UnauthorizedException,
+  Response,
+  HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcrypt';
+import { AuthRepository } from './auth.repository';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
+import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { randomBytes } from 'crypto';
+import { APP_CONFIG } from '../../configurations/app.config';
 import { sendPasswordResetEmail } from '../../email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
-  ) {
-  }
+  ) {}
 
   async register(
     username: string,
@@ -27,16 +29,17 @@ export class AuthService {
     confirmPassword: string,
   ): Promise<UserWithoutPassword> {
     if (password !== confirmPassword) {
-      throw new UnauthorizedException('Паролі не збігаються');
+      throw new UnauthorizedException('Passwords not match!');
     }
 
-    const existingUser = await this.usersService.findByEmail(email);
-    if (existingUser) {
+    const existUser = await this.authRepository.findUserByEmail(email);
+
+    if (existUser) {
       throw new UnauthorizedException('A user with this email already exists.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.usersService.createUser(
+    const newUser = await this.authRepository.createUser(
       username,
       email,
       hashedPassword,
@@ -45,114 +48,141 @@ export class AuthService {
     return userWithoutPassword;
   }
 
+  async generateTokens(user: User) {
+    const payload = { email: user.email, id: user.id };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: AUTH_CONFIG.expireJwt,
+    });
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: AUTH_CONFIG.expireJwtRefresh,
+    });
+
+    await this.authRepository.updateUserRefreshToken(user.id, refreshToken);
+
+    return { accessToken, refreshToken };
+  }
+
   async login(
     email: string,
     password: string,
     @Response() res: any,
   ): Promise<void> {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.authRepository.findUserByEmail(email);
 
     if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Incorrect email or password!');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Incorrect email or password!');
     }
 
-    const payload = { email: user.email, sub: user.id };
-
-    const accessToken = this.jwtService.sign(payload);
-
-    const refreshToken = randomBytes(32).toString('hex');
-
-    await this.usersService.updateRefreshToken(user.id, refreshToken);
-
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true, // Убедитесь, что в продакшн-режиме будет true
-      maxAge: 10 * 24 * 60 * 60 * 1000, // 1 час
-      path: '/',
-      sameSite: 'None',
-    });
-
-    return res.status(HttpStatus.OK).json({ message: 'Successful login' });
-  }
-
-  async refreshToken(
-    email: string,
-    refreshToken: string,
-    @Response() res: any,
-  ): Promise<{ access_token: string }> {
-    const user = await this.usersService.findOne(email);
-
-    if (!user || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    const payload = { email: user.email, sub: user.id };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '10d' });
+    const { accessToken, refreshToken } = await this.generateTokens(user);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
-      maxAge: 10 * 24 * 60 * 60 * 1000,
+      maxAge: AUTH_CONFIG.expireJwt,
+      path: '/',
       sameSite: 'None',
     });
 
-    return res.json({ access_token: accessToken });
+    res.cookie('refresh_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: AUTH_CONFIG.expireJwtRefresh,
+      path: '/',
+      sameSite: 'None',
+    });
+
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Successfully logged in' });
+  }
+
+  async refreshToken(
+    refreshToken: string,
+    @Response() res: any,
+  ): Promise<{ access_token: string }> {
+    try {
+      const decoded = this.jwtService.verify(refreshToken);
+      const user = await this.authRepository.findUserByEmail(decoded.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found!');
+      }
+
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+        await this.generateTokens(user);
+
+      res.cookie('access_token', newAccessToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: AUTH_CONFIG.expireJwt,
+        path: '/',
+        sameSite: 'None',
+      });
+
+      res.cookie('refresh_token', newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: AUTH_CONFIG.expireJwtRefresh,
+        path: '/',
+        sameSite: 'None',
+      });
+
+      return res.json({ access_token: newAccessToken });
+    } catch (e) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 
   async googleLogin(user: any): Promise<any> {
     try {
       if (!user.googleId || !user.email || !user.username) {
+        throw new UnauthorizedException('Invalid Google user data!');
       }
 
-      return await this.usersService.findOrCreateGoogleUser({
+      return await this.authRepository.findOrCreateGoogleUser({
         googleId: user.googleId,
         email: user.email,
         username: user.username,
       });
-    } catch (error) {
-      throw new Error('Error during Google login');
+    } catch (e) {
+      throw new UnauthorizedException('Invalid Google user data!');
     }
   }
 
   async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.authRepository.findUserByEmail(email);
 
-
-    const user = await this.usersService.findByEmail(email);
     if (!user) {
-
       throw new BadRequestException('No user with this email address found.');
     }
 
     const resetToken = randomBytes(32).toString('hex');
-    const resetLink = `https://taskcraft.click/reset-password?token=${resetToken}`;
+    const resetLink = `${APP_CONFIG.baseUrl}/reset-password?token=${resetToken}`;
 
+    await this.authRepository.updateUserPasswordResetToken(user.id, resetToken);
 
-    await this.usersService.updatePasswordResetToken(user.id, resetToken);
-
-
-    await sendPasswordResetEmail(email, 'Password reset', resetLink);
-
+    await sendPasswordResetEmail(email, 'Password Reset', resetLink);
   }
+
   async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await this.authRepository.findUserByPasswordResetToken(token);
 
-
-    const user = await this.usersService.findByPasswordResetToken(token);
     if (!user) {
-
-      throw new BadRequestException('Password reset token is invalid or expired');
+      throw new BadRequestException(
+        'Password reset token is invalid or expired',
+      );
     }
 
-    await this.usersService.updatePassword(user.id, newPassword);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.authRepository.updateUserPassword(user.id, hashedPassword);
 
-
-    await this.usersService.updatePasswordResetToken(user.id, '');
-
+    await this.authRepository.updateUserPasswordResetToken(user.id, '');
   }
-
 }

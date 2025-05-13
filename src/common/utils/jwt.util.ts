@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { APP_CONFIG } from '../../configurations/app.config';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { BadRequestException } from '@nestjs/common';
 
 interface JwtPayload {
@@ -10,7 +10,7 @@ interface JwtPayload {
 }
 
 export function generateJwtToken(email: string, sub: string) {
-  const secretJWT = APP_CONFIG.secretJWT;
+  const secretJWT = AUTH_CONFIG.secretJWT;
 
   if (!secretJWT) {
     throw new Error('JWT secret is not defined');
@@ -21,7 +21,7 @@ export function generateJwtToken(email: string, sub: string) {
 }
 
 export function verifyJwtToken(token: string): JwtPayload {
-  const secretJWT = APP_CONFIG.secretJWT;
+  const secretJWT = AUTH_CONFIG.secretJWT;
 
   if (!secretJWT) {
     throw new Error('JWT secret is not defined');
