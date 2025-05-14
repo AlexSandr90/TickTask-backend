@@ -9,7 +9,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
-import { AuthRepository } from './auth.repository';
+import { UsersRepository } from '../users/users.repository';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { AuthRepository } from './auth.repository';
     AuthService,
     UsersService,
     GoogleStrategy,
-    AuthRepository,
+    UsersRepository,
     PrismaService,
     {
       provide: 'GoogleStrategy',

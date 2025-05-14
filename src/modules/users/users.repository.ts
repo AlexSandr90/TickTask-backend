@@ -1,21 +1,48 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findOne(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email: email } });
+  // --------- FIND METHODS ---------
+
+  async findById(id: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async findSafeUserByEmail(email: string) {
+    const user = await this.findByEmail(email);
 
     if (!user) throw new Error('User not found');
     const { passwordHash, googleId, passwordResetToken, ...safeUser } = user;
     return safeUser;
   }
 
-  async findByEmail(email: string) {
-    return await this.prisma.user.findUnique({ where: { email } });
+  async findUserByRefreshToken(refreshToken: string): Promise<User | null> {
+    return this.prisma.user.findFirst({ where: { refreshToken } });
   }
+
+  async findUserByPasswordResetToken(token: string): Promise<User | null> {
+    return this.prisma.user.findFirst({ where: { passwordResetToken: token } });
+  }
+
+  async findByPasswordResetToken(resetToken: string): Promise<User | null> {
+    return await this.prisma.user.findFirst({
+      where: { passwordResetToken: resetToken },
+    });
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({ where: { googleId } });
+  }
+
+  // --------- USER OPERATIONS ---------
 
   async createUser(data: {
     username: string;
@@ -27,71 +54,85 @@ export class UsersRepository {
     });
   }
 
-  async updateUser(email: string, updateData: any) {
-    return await this.prisma.user.update({
+  async findOrCreateGoogleUser(googleUserData: {
+    googleId: string;
+    email: string;
+    username: string;
+    isActive?: boolean;
+  }): Promise<User> {
+    return this.prisma.user.upsert({
+      where: { email: googleUserData.email },
+      update: { googleId: googleUserData.googleId },
+      create: {
+        email: googleUserData.email,
+        username: googleUserData.username,
+        googleId: googleUserData.googleId,
+        isActive:
+          googleUserData.isActive !== undefined
+            ? googleUserData.isActive
+            : true,
+      },
+    });
+  }
+
+  async updateUser(
+    email: string,
+    updateData: Prisma.UserUpdateInput,
+  ): Promise<User> {
+    return this.prisma.user.update({
       where: { email },
       data: updateData,
     });
   }
 
-  async removeUser(email: string) {
-    return await this.prisma.user.delete({ where: { email } });
-  }
-
-  async updateRefreshToken(userId: string, refreshToken: string) {
-    return await this.prisma.user.update({
+  async updateUserById(
+    userId: string,
+    updateData: Prisma.UserUpdateInput,
+  ): Promise<User> {
+    return this.prisma.user.update({
       where: { id: userId },
-      data: { refreshToken },
+      data: updateData,
     });
   }
 
-  async activateUser(email: string) {
-    return await this.prisma.user.update({
+  async removeUser(email: string): Promise<User> {
+    return this.prisma.user.delete({ where: { email } });
+  }
+
+  async activateUser(email: string): Promise<User> {
+    return this.prisma.user.update({
       where: { email },
       data: { isActive: true },
     });
   }
 
-  async findByGoogleId(googleId: string) {
-    return await this.prisma.user.findUnique({ where: { googleId } });
+  // TOKEN AND PASSWORD OPERATIONS
+
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string | null,
+  ): Promise<User> {
+    return this.updateUserById(userId, { refreshToken });
   }
 
-  async createGoogleUser(data: {
-    googleId: string;
-    email: string;
-    username: string;
-  }) {
-    return await this.prisma.user.create({
-      data: {
-        googleId: data.googleId,
-        email: data.email,
-        username: data.username,
-      },
+  async updatePassword(userId: string, passwordHash: string): Promise<User> {
+    return this.updateUserById(userId, {
+      passwordHash,
+      passwordResetToken: null,
     });
   }
 
-  async updatePassword(userId: string, passwordHash: string) {
-    return await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash },
-    });
+  async updatePasswordResetToken(
+    userId: string,
+    resetToken: string | null,
+  ): Promise<User> {
+    return this.updateUserById(userId, { passwordResetToken: resetToken });
   }
 
-  async updatePasswordResetToken(userId: string, resetToken: string) {
-    return await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordResetToken: resetToken },
-    });
-  }
-
-  async findByPasswordResetToken(resetToken: string) {
-    return await this.prisma.user.findFirst({
-      where: { passwordResetToken: resetToken },
-    });
-  }
+  // --------- AVATAR ---------
 
   async updateAvatarPath(userId: string, avatarPath: string) {
-    return await this.prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
       data: { avatarPath },
     });

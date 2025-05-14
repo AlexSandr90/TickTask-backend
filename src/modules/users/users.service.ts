@@ -10,6 +10,7 @@ import { UpdateUserDto } from './dto/user.dto';
 import { generateJwtToken, verifyJwtToken } from '../../common/utils/jwt.util';
 import * as process from 'node:process';
 import { sendVerificationEmail } from '../../email/email.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -111,20 +112,22 @@ export class UsersService {
     googleId: string;
     email: string;
     username: string;
-  }): Promise<any> {
+  }): Promise<User> {
+    if (!data.googleId || !data.email || !data.username) {
+      throw new BadRequestException('Missing required Google user data');
+    }
     try {
-      if (!data.googleId || !data.email || !data.username) {
-        throw new BadRequestException('Missing required Google user data');
+      const userByGoogleId = await this.usersRepository.findByGoogleId(
+        data.googleId,
+      );
+
+      if (userByGoogleId) {
+        return userByGoogleId;
       }
 
-      let user = await this.usersRepository.findByGoogleId(data.googleId);
-
-      if (!user) user = await this.usersRepository.findByEmail(data.email);
-
-      if (!user) user = await this.usersRepository.createGoogleUser(data);
-
-      return user;
+      return await this.usersRepository.findOrCreateGoogleUser(data);
     } catch (e) {
+      console.error('Error in findOrCreateGoogleUser:', e);
       throw new Error('Error while finding or creating Google user');
     }
   }
@@ -157,4 +160,3 @@ export class UsersService {
     }
   }
 }
-
