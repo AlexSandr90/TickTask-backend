@@ -23,11 +23,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { generateJwtToken } from '../../common/utils/jwt.util';
 import {
   ApiResponseNotFoundDecorator,
-  ApiResponseForbiddenDecorator,
   ApiResponseBadRequestDecorator,
   ApiResponseUnauthorizedDecorator,
   ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { APP_CONFIG } from '../../configurations/app.config';
 
 @Controller('auth')
 export class AuthController {
@@ -96,12 +97,18 @@ export class AuthController {
   )
   @ApiResponseInternalServerErrorDecorator()
   async refreshToken(
-    @Body('email') email: string,
-    @Body('refresh_token') refreshToken: string,
+    @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
     @Res() res: Response,
   ): Promise<{ access_token: string }> {
-    if (!email || !refreshToken) {
-      throw new BadRequestException('Email or refresh token not sent');
+    if (!dto.email) {
+      throw new BadRequestException('Email not sent');
+    }
+
+    const refreshToken = req.cookies['refresh_token'];
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found in cookies');
     }
 
     return this.authService.refreshToken(refreshToken, res);
@@ -157,7 +164,7 @@ export class AuthController {
       });
 
       // Перенаправление на домашнюю страницу
-      return res.redirect(`https://taskcraft.click/home`);
+      return res.redirect(`${APP_CONFIG.baseUrl}/home`);
     } catch (error) {
       console.error('Google Callback Error:', error);
       return res.status(500).json({
