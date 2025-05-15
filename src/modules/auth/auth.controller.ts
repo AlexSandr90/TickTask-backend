@@ -27,7 +27,6 @@ import {
   ApiResponseUnauthorizedDecorator,
   ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { APP_CONFIG } from '../../configurations/app.config';
 
 @Controller('auth')
@@ -97,14 +96,9 @@ export class AuthController {
   )
   @ApiResponseInternalServerErrorDecorator()
   async refreshToken(
-    @Body() dto: RefreshTokenDto,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<{ access_token: string }> {
-    if (!dto.email) {
-      throw new BadRequestException('Email not sent');
-    }
-
     const refreshToken = req.cookies['refresh_token'];
 
     if (!refreshToken) {
