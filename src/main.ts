@@ -36,8 +36,6 @@ async function bootstrap() {
     .setTitle('TickTask API Documentation')
     .setDescription('Documentation to API')
     .setVersion('1.0')
-    .addTag('auth')
-    .addTag('users')
     .addBearerAuth()
     .build();
 
