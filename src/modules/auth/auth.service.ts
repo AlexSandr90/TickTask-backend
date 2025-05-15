@@ -5,7 +5,6 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { AuthRepository } from './auth.repository';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import * as bcrypt from 'bcrypt';
@@ -14,11 +13,12 @@ import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { randomBytes } from 'crypto';
 import { APP_CONFIG } from '../../configurations/app.config';
 import { sendPasswordResetEmail } from '../../email/email.service';
+import { UsersRepository } from '../users/users.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly authRepository: AuthRepository,
+    private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -32,18 +32,18 @@ export class AuthService {
       throw new UnauthorizedException('Passwords not match!');
     }
 
-    const existUser = await this.authRepository.findUserByEmail(email);
+    const existUser = await this.usersRepository.findByEmail(email);
 
     if (existUser) {
       throw new UnauthorizedException('A user with this email already exists.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.authRepository.createUser(
+    const newUser = await this.usersRepository.createUser({
       username,
       email,
-      hashedPassword,
-    );
+      passwordHash: hashedPassword,
+    });
     const { passwordHash, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
   }
@@ -58,7 +58,7 @@ export class AuthService {
       expiresIn: AUTH_CONFIG.expireJwtRefresh,
     });
 
-    await this.authRepository.updateUserRefreshToken(user.id, refreshToken);
+    await this.usersRepository.updateRefreshToken(user.id, refreshToken);
 
     return { accessToken, refreshToken };
   }
@@ -68,7 +68,7 @@ export class AuthService {
     password: string,
     @Response() res: any,
   ): Promise<void> {
-    const user = await this.authRepository.findUserByEmail(email);
+    const user = await this.usersRepository.findByEmail(email);
 
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Incorrect email or password!');
@@ -109,7 +109,7 @@ export class AuthService {
   ): Promise<{ access_token: string }> {
     try {
       const decoded = this.jwtService.verify(refreshToken);
-      const user = await this.authRepository.findUserByEmail(decoded.email);
+      const user = await this.usersRepository.findByEmail(decoded.email);
 
       if (!user) {
         throw new UnauthorizedException('User not found!');
@@ -146,7 +146,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid Google user data!');
       }
 
-      return await this.authRepository.findOrCreateGoogleUser({
+      return await this.usersRepository.findOrCreateGoogleUser({
         googleId: user.googleId,
         email: user.email,
         username: user.username,
@@ -157,7 +157,7 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string): Promise<void> {
-    const user = await this.authRepository.findUserByEmail(email);
+    const user = await this.usersRepository.findByEmail(email);
 
     if (!user) {
       throw new BadRequestException('No user with this email address found.');
@@ -166,13 +166,13 @@ export class AuthService {
     const resetToken = randomBytes(32).toString('hex');
     const resetLink = `${APP_CONFIG.baseUrl}/reset-password?token=${resetToken}`;
 
-    await this.authRepository.updateUserPasswordResetToken(user.id, resetToken);
+    await this.usersRepository.updatePasswordResetToken(user.id, resetToken);
 
     await sendPasswordResetEmail(email, 'Password Reset', resetLink);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.authRepository.findUserByPasswordResetToken(token);
+    const user = await this.usersRepository.findUserByPasswordResetToken(token);
 
     if (!user) {
       throw new BadRequestException(
@@ -181,8 +181,6 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await this.authRepository.updateUserPassword(user.id, hashedPassword);
-
-    await this.authRepository.updateUserPasswordResetToken(user.id, '');
+    await this.usersRepository.updatePassword(user.id, hashedPassword);
   }
 }
