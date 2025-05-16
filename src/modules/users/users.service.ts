@@ -11,10 +11,15 @@ import { generateJwtToken, verifyJwtToken } from '../../common/utils/jwt.util';
 import * as process from 'node:process';
 import { sendVerificationEmail } from '../../email/email.service';
 import { User } from '@prisma/client';
+import { DEFAULT_AVATAR_PATH } from '../../common/constants';
+import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly supabaseService: SupabaseAvatarService,
+  ) {}
 
   async findOne(email: string) {
     const user = await this.usersRepository.findByEmail(email);
@@ -158,5 +163,23 @@ export class UsersService {
     } catch (e) {
       throw new InternalServerErrorException('Error updating avatar path');
     }
+  }
+
+  async resetToDefaultAvatar(userId: string) {
+    try {
+      const user = await this.usersRepository.findOneByIdAndAvatarPath(
+        userId,
+        DEFAULT_AVATAR_PATH,
+      );
+
+      if (user && user?.avatarPath && user.avatarPath !== DEFAULT_AVATAR_PATH) {
+        await this.supabaseService.deleteAvatar(user.avatarPath);
+      }
+
+      return await this.usersRepository.resetToDefaultAvatar(
+        userId,
+        DEFAULT_AVATAR_PATH,
+      );
+    } catch (e) {}
   }
 }
