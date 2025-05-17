@@ -33,13 +33,20 @@ export class UsersRepository {
   }
 
   async findByPasswordResetToken(resetToken: string): Promise<User | null> {
-    return await this.prisma.user.findFirst({
+    return this.prisma.user.findFirst({
       where: { passwordResetToken: resetToken },
     });
   }
 
   async findByGoogleId(googleId: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({ where: { googleId } });
+    return this.prisma.user.findUnique({ where: { googleId } });
+  }
+
+  async findOneByIdAndAvatarPath(id: string, avatarPath: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { avatarPath: true },
+    });
   }
 
   // --------- USER OPERATIONS ---------
@@ -49,7 +56,7 @@ export class UsersRepository {
     email: string;
     passwordHash: string;
   }) {
-    return await this.prisma.user.create({
+    return this.prisma.user.create({
       data: { ...data, isActive: false },
     });
   }
@@ -132,6 +139,13 @@ export class UsersRepository {
   // --------- AVATAR ---------
 
   async updateAvatarPath(userId: string, avatarPath: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarPath },
+    });
+  }
+
+  async resetToDefaultAvatar(userId: string, avatarPath: string) {
     return this.prisma.user.update({
       where: { id: userId },
       data: { avatarPath },

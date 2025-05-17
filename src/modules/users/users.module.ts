@@ -31,6 +31,6 @@ import { UsersRepository } from './users.repository';
     UsersRepository,
     SupabaseAvatarService,
   ],
-  exports: [UsersService, UsersRepository],
+  exports: [UsersService, UsersRepository, SupabaseAvatarService],
 })
 export class UsersModule {}

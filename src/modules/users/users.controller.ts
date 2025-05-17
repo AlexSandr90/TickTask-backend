@@ -13,6 +13,7 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  Put,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
@@ -34,11 +35,13 @@ import {
   ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
 import { AuthProtectedDecorator } from '../../common/decorators/auth.decorator';
+import { DEFAULT_AVATAR_PATH } from '../../common/constants';
 
 interface RequestWithUser extends Request {
   user: {
     id: string;
     email: string;
+    avatarPath?: string;
   };
 }
 
@@ -216,6 +219,11 @@ export class UsersController {
       throw new BadRequestException('No file uploaded');
     }
     console.log(req.user); // Логируем объект пользователя
+
+    if (req.user.avatarPath && req.user.avatarPath !== DEFAULT_AVATAR_PATH) {
+      await this.supabaseAvatarService.deleteAvatar(req.user.avatarPath);
+    }
+
     // Получаем расширение файла
     const fileExt = file.originalname.split('.').pop();
     const filePath = `${req.user.id}.${fileExt}`;
@@ -233,6 +241,27 @@ export class UsersController {
     // Возвращаем URL аватара
     return {
       avatarUrl: this.supabaseAvatarService.getAvatarUrl(filePath),
+    };
+  }
+
+  @Put('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async replaceAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: RequestWithUser,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    return this.uploadAvatar(file, req);
+  }
+
+  @Delete('avatar')
+  async resetAvatar(@Request() req: any) {
+    await this.usersService.resetToDefaultAvatar(req.user.id);
+
+    return {
+      avatarUrl: this.supabaseAvatarService.getAvatarUrl(DEFAULT_AVATAR_PATH),
     };
   }
 }
