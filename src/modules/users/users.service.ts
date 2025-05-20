@@ -37,6 +37,10 @@ export class UsersService {
     return await this.usersRepository.findByEmail(email);
   }
 
+  async findOneById(id: string) {
+    return await this.usersRepository.findById(id);
+  }
+
   async createUser(username: string, email: string, passwordHash: string) {
     return this.usersRepository.createUser({ username, email, passwordHash });
   }

@@ -14,6 +14,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Put,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
@@ -78,6 +79,26 @@ export class UsersController {
 
     const { refreshToken, ...userData } = user;
     return userData;
+  }
+
+  @Get(':id')
+  @AuthProtectedDecorator()
+  @ApiOperation({ summary: 'Get User By id' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user received by id',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async getUserById(@Param('id') id: string) {
+    const user = await this.usersService.findOneById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   @Patch('me')
