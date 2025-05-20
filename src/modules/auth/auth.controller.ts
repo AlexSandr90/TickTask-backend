@@ -75,7 +75,10 @@ export class AuthController {
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseNotFoundDecorator('User not found')
   @ApiResponseInternalServerErrorDecorator()
-  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
       return await this.authService.login(
         loginDto.email,
@@ -118,6 +121,15 @@ export class AuthController {
         secure: true, // Убедитесь, что это будет работать только с HTTPS
         sameSite: 'none', // Обеспечивает работу с куки при кросс-доменных запросах
         domain: 'taskcraft.click',
+        path: '/',
+        expires: new Date(0),
+      });
+      res.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        domain: 'taskcraft.click',
+        path: '/',
       });
 
       // Отправляем успешный ответ на логаут
