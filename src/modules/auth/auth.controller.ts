@@ -124,13 +124,6 @@ export class AuthController {
         path: '/',
         expires: new Date(0),
       });
-      res.clearCookie('refresh_token', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        domain: 'taskcraft.click',
-        path: '/',
-      });
 
       // Отправляем успешный ответ на логаут
       res.status(200).send({ message: 'Exit is successful' });
