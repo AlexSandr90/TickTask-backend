@@ -80,20 +80,12 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect email or password!');
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user);
+    const { accessToken } = await this.generateTokens(user);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
       maxAge: AUTH_CONFIG.expireJwt,
-      path: '/',
-      sameSite: 'None',
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: AUTH_CONFIG.expireJwtRefresh,
       path: '/',
       sameSite: 'None',
     });
@@ -115,21 +107,12 @@ export class AuthService {
         throw new UnauthorizedException('User not found!');
       }
 
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-        await this.generateTokens(user);
+      const { accessToken: newAccessToken } = await this.generateTokens(user);
 
       res.cookie('access_token', newAccessToken, {
         httpOnly: true,
         secure: true,
         maxAge: AUTH_CONFIG.expireJwt,
-        path: '/',
-        sameSite: 'None',
-      });
-
-      res.cookie('refresh_token', newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        maxAge: AUTH_CONFIG.expireJwtRefresh,
         path: '/',
         sameSite: 'None',
       });

@@ -21,6 +21,7 @@
     "dev": "npm run start:dev",
     "prisma:dev": "dotenv -e .env.local -- npx prisma migrate dev",
     "studio:local": "dotenv -e .env.local -- npx prisma studio",
+    "studio": "npx prisma studio --schema ./prisma/schema.prisma",
     "start:dev:local": "dotenv -e .env.local -- npm run start:dev"
   },
   "dependencies": {
