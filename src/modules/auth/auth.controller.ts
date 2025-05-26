@@ -113,18 +113,19 @@ export class AuthController {
   }
 
   @Post('logout')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'User exit' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
     try {
-      const user = req.user as { id: string };
-      const userId = user?.id;
+      const user = req.user as { email: string };
+      const email = user?.email;
 
-      if (!userId) {
+      if (!email) {
         throw new UnauthorizedException('User not authenticated');
       }
 
-      await this.authService.logout(userId);
+      await this.authService.logout(email);
 
       res.clearCookie('access_token', {
         httpOnly: true,

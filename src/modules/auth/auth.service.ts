@@ -172,13 +172,12 @@ export class AuthService {
     await this.usersRepository.updatePassword(user.id, hashedPassword);
   }
 
-  async logout(userId: string): Promise<void> {
+  async logout(email: string): Promise<void> {
     await this.prisma.user.update({
-      where: { id: userId },
+      where: { email },
       data: {
         refreshToken: null,
       },
     });
   }
 }
-
