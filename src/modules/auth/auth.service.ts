@@ -88,6 +88,7 @@ export class AuthService {
       maxAge: AUTH_CONFIG.expireJwt,
       path: '/',
       sameSite: 'None',
+      domain: 'taskcraft.click',
     });
 
     return res
@@ -115,6 +116,7 @@ export class AuthService {
         maxAge: AUTH_CONFIG.expireJwt,
         path: '/',
         sameSite: 'None',
+        domain: 'taskcraft.click',
       });
 
       return res.json({ access_token: newAccessToken });

@@ -15,12 +15,16 @@ import { User } from '@prisma/client';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
+import { JwtService } from '@nestjs/jwt';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly supabaseService: SupabaseAvatarService,
+    private readonly jwtService: JwtService,
+    private readonly authService: AuthService,  // добавьте сюда
   ) {}
 
   async findOne(email: string) {
@@ -93,28 +97,33 @@ export class UsersService {
   }
 
   async activateUserByTokenAndGenerateToken(token: string, res: Response) {
-    if (!token) throw new BadRequestException('Token not transferred');
-
-    let email: string;
-
-    try {
-      const decoded = verifyJwtToken(token);
-      email = decoded.email;
-    } catch (e) {
-      throw new BadRequestException(`Invalid or expired link. Error ${e}`);
+    if (!token) {
+      throw new BadRequestException('Token not transferred');
     }
 
-    const user = await this.usersRepository.findByEmail(email);
-    if (!user) throw new NotFoundException('User not found');
+    let decoded: { email: string; id: string };
+
+    try {
+      decoded = this.jwtService.verify(token, {
+        secret: process.env.JWT_MAGIC_SECRET,
+      });
+    } catch (error) {
+      throw new BadRequestException(`Invalid or expired link. Error: ${error.message || error}`);
+    }
+
+    const user = await this.usersRepository.findByEmail(decoded.email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     if (user.isActive) {
-      throw new BadRequestException('The User is already activated');
+      throw new BadRequestException('The user is already activated');
     }
 
     try {
-      const updatedUser = await this.usersRepository.activateUser(email);
+      const updatedUser = await this.usersRepository.activateUser(decoded.email);
 
-      const accessToken = generateJwtToken(updatedUser.email, updatedUser.id);
+      const { accessToken, refreshToken } = await this.authService.generateTokens(updatedUser);
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
@@ -122,10 +131,20 @@ export class UsersService {
         maxAge: Number(AUTH_CONFIG.expireJwt),
         path: '/',
         sameSite: 'none',
+        domain: 'taskcraft.click',
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
+        path: '/',
+        sameSite: 'none',
+        domain: 'taskcraft.click',
       });
 
       return res.json({ user: updatedUser, accessToken });
-    } catch (e) {
+    } catch (error) {
       throw new InternalServerErrorException('Failed to activate user');
     }
   }
