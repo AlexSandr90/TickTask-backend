@@ -83,12 +83,21 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect email or password!');
     }
 
-    const { accessToken } = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
       maxAge: AUTH_CONFIG.expireJwt,
+      path: '/',
+      sameSite: 'None',
+      domain: 'taskcraft.click',
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: AUTH_CONFIG.expireJwtRefresh,
       path: '/',
       sameSite: 'None',
       domain: 'taskcraft.click',
@@ -111,7 +120,10 @@ export class AuthService {
         throw new UnauthorizedException('User not found!');
       }
 
-      const { accessToken: newAccessToken } = await this.generateTokens(user);
+      const {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      } = await this.generateTokens(user);
 
       res.cookie('access_token', newAccessToken, {
         httpOnly: true,
@@ -122,11 +134,21 @@ export class AuthService {
         domain: 'taskcraft.click',
       });
 
+      res.cookie('refresh_token', newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: AUTH_CONFIG.expireJwtRefresh,
+        path: '/',
+        sameSite: 'None',
+        domain: 'taskcraft.click',
+      });
+
       return res.json({ access_token: newAccessToken });
     } catch (e) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
+
 
   async googleLogin(user: any): Promise<any> {
     try {
