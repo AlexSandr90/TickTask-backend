@@ -2,19 +2,17 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
 import { JwtModule } from '@nestjs/jwt';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
-import { UsersRepository } from '../users/users.repository';
 
 @Module({
   imports: [
     PrismaModule,
-    forwardRef(() => UsersModule), // 🔁
+    forwardRef(() => UsersModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -27,9 +25,7 @@ import { UsersRepository } from '../users/users.repository';
   controllers: [AuthController],
   providers: [
     AuthService,
-    UsersService,
     GoogleStrategy,
-    UsersRepository,
     PrismaService,
     {
       provide: 'GoogleStrategy',
@@ -40,5 +36,6 @@ import { UsersRepository } from '../users/users.repository';
       inject: [PrismaService],
     },
   ],
+  exports: [AuthService], // <--- ВАЖНО!
 })
 export class AuthModule {}
