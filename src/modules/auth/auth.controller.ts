@@ -28,6 +28,7 @@ import {
   ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
 import { APP_CONFIG } from '../../configurations/app.config';
+import { JwtAuthGuard } from '../../guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -114,18 +115,32 @@ export class AuthController {
   @Post('logout')
   @ApiOperation({ summary: 'User exit' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
-  async logout(@Res() res: Response): Promise<void> {
+  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
     try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      await this.authService.logout(userId);
+
       res.clearCookie('access_token', {
         httpOnly: true,
-        secure: true, // Убедитесь, что это будет работать только с HTTPS
-        sameSite: 'none', // Обеспечивает работу с куки при кросс-доменных запросах
+        secure: true,
+        sameSite: 'none',
         domain: 'taskcraft.click',
         path: '/',
-        expires: new Date(0),
       });
 
-      // Отправляем успешный ответ на логаут
+      res.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        domain: 'taskcraft.click',
+        path: '/',
+      });
+
       res.status(200).send({ message: 'Exit is successful' });
     } catch (error) {
       console.error('Logout Error:', error);
