@@ -17,7 +17,8 @@ import {
   NotFoundException,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express'; // импорт типа Response из express
+import { Response } from 'express';
+
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../../guards/auth.guard';
