@@ -117,7 +117,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const user = req.user as { id: string };
+      const userId = user?.id;
 
       if (!userId) {
         throw new UnauthorizedException('User not authenticated');
