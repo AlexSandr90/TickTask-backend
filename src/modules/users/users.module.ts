@@ -3,7 +3,6 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { JwtStrategy } from '../auth/strategy/jwt.strategy';
-
 import { JwtModule } from '@nestjs/jwt';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
@@ -14,7 +13,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    forwardRef(() => AuthModule), // 🔁
+    forwardRef(() => AuthModule),
     PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
