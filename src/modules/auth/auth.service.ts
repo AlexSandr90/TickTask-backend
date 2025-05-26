@@ -14,13 +14,16 @@ import { randomBytes } from 'crypto';
 import { APP_CONFIG } from '../../configurations/app.config';
 import { sendPasswordResetEmail } from '../../email/email.service';
 import { UsersRepository } from '../users/users.repository';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
-  ) {}
+    private readonly prisma: PrismaService,
+  ) {
+  }
 
   async register(
     username: string,
@@ -168,4 +171,14 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.usersRepository.updatePassword(user.id, hashedPassword);
   }
+
+  async logout(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        refreshToken: null,
+      },
+    });
+  }
 }
+
