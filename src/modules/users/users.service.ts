@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import {
   BadRequestException,
   Injectable,
@@ -13,6 +14,7 @@ import { sendVerificationEmail } from '../../email/email.service';
 import { User } from '@prisma/client';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 
 @Injectable()
 export class UsersService {
@@ -90,7 +92,7 @@ export class UsersService {
     return { message: 'Verification email sent.' };
   }
 
-  async activateUserByToken(token: string) {
+  async activateUserByTokenAndGenerateToken(token: string, res: Response) {
     if (!token) throw new BadRequestException('Token not transferred');
 
     let email: string;
@@ -110,12 +112,24 @@ export class UsersService {
     }
 
     try {
-      const updateUser = await this.usersRepository.activateUser(email);
-      return { message: 'User successfully activated', user: updateUser };
+      const updatedUser = await this.usersRepository.activateUser(email);
+
+      const accessToken = generateJwtToken(updatedUser.email, updatedUser.id);
+
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: Number(AUTH_CONFIG.expireJwt),
+        path: '/',
+        sameSite: 'none',
+      });
+
+      return res.json({ user: updatedUser, accessToken });
     } catch (e) {
       throw new InternalServerErrorException('Failed to activate user');
     }
   }
+
 
   async findOrCreateGoogleUser(data: {
     googleId: string;

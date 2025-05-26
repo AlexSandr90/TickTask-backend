@@ -15,7 +15,9 @@ import {
   UploadedFile,
   Put,
   NotFoundException,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express'; // импорт типа Response из express
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../../guards/auth.guard';
@@ -182,9 +184,12 @@ export class UsersController {
   @ApiResponseForbiddenDecorator()
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
-  async activateUser(@Param('token') token: string) {
+  async activateUser(
+    @Param('token') token: string,
+    @Res() res: Response,  // <--- нужно получить объект Response
+  ) {
     try {
-      return await this.usersService.activateUserByToken(token);
+      return await this.usersService.activateUserByTokenAndGenerateToken(token, res);
     } catch (error) {
       throw new BadRequestException('Failed to activate user');
     }
