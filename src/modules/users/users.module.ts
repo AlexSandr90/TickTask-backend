@@ -10,9 +10,11 @@ import { JwtAuthGuard } from '../../guards/auth.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import { UsersRepository } from './users.repository';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
