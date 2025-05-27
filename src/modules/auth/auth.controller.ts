@@ -29,6 +29,7 @@ import {
 } from '../../common/decorators/swagger';
 import { APP_CONFIG } from '../../configurations/app.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 
 @Controller('auth')
 export class AuthController {
@@ -168,15 +169,25 @@ export class AuthController {
         });
       }
 
-      const accessToken = generateJwtToken(email, googleId);
 
-      // Записываем токен в куки
+      const { accessToken, refreshToken } = await this.authService.generateTokens(processedUser);
+
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: true, // Убедитесь, что ваше приложение работает по HTTPS
+        secure: true,
         sameSite: 'none',
-        domain: 'taskcraft.click', // Убедись, что куки доступны для всех поддоменов
-        maxAge: 10 * 24 * 60 * 60 * 1000, // Токен будет действителен 10 дней
+        domain: 'taskcraft.click',
+        maxAge: Number(AUTH_CONFIG.expireJwt),
+        path: '/',
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        domain: 'taskcraft.click',
+        maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
+        path: '/',
       });
 
       // Перенаправление на домашнюю страницу
