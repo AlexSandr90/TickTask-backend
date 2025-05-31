@@ -12,17 +12,17 @@ model User {
   username           String
   email              String    @unique
   passwordHash       String?
-  isActive           Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   lastLogin          DateTime?
   theme              String    @default("light")
   notifications      Boolean   @default(true)
   refreshToken       String?
+  isActive           Boolean   @default(false)
   googleId           String?   @unique
   passwordResetToken String?
-  boards             Board[]
   avatarPath         String?
+  boards             Board[]
 }
 
 model Board {
@@ -39,9 +39,10 @@ model Board {
 model Column {
   id        String   @id @unique @default(uuid())
   title     String
-  boardId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  boardId   String
+  position  Int      @default(0)
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   tasks     Task[]
 }
@@ -53,5 +54,6 @@ model Task {
   columnId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  position    Int      @default(0)
   column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
 }

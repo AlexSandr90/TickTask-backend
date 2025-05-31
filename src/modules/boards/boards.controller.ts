@@ -16,6 +16,13 @@ import {
   ApiResponseUnauthorizedDecorator,
   ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
+import {
+  ApiCreateBoardResponses,
+  ApiUpdateBoardResponses,
+  ApiDeleteBoardResponses,
+  ApiGetBoardByIdResponses,
+  ApiGetAllBoardsResponses,
+} from '../../common/decorators/boards-api-responses.decorator';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
@@ -27,7 +34,11 @@ export class BoardsController {
 
   @Get()
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Get all boards' })
+  @ApiOperation({
+    summary: 'Get all boards',
+    description: 'Retrieve all boards belonging to the authenticated user',
+  })
+  @ApiGetAllBoardsResponses()
   @ApiResponse({ status: 200, description: 'The User get all boards' })
   @ApiResponseBadRequestDecorator(
     'Bad Request – Invalid board ID or missing param',
@@ -42,7 +53,11 @@ export class BoardsController {
 
   @Get(':id')
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Get board for User ID' })
+  @ApiOperation({
+    summary: 'Get board for User ID',
+    description: 'Retrieve a specific board by ID for the authenticated user',
+  })
+  @ApiGetBoardByIdResponses()
   @ApiResponse({ status: 200, description: 'The User get Board for User ID' })
   @ApiResponseBadRequestDecorator(
     'Bad Request – Invalid board ID or missing param',
@@ -51,13 +66,17 @@ export class BoardsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
   @ApiResponseInternalServerErrorDecorator()
-  async getBoardById(@Param('id') id: string) {
-    return this.boardsService.findBoardById(id);
+  async getBoardById(@Param('id') id: string, @CurrentUserDecorator() user) {
+    return this.boardsService.findBoardById(id, user.id);
   }
 
   @Post()
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'User created board' })
+  @ApiOperation({
+    summary: 'User created board',
+    description: 'Create a new board for the authenticated user',
+  })
+  @ApiCreateBoardResponses()
   @ApiResponse({ status: 201, description: 'The User create new Board' })
   @ApiResponseBadRequestDecorator(
     'Bad Request – Invalid board ID or missing param',
@@ -66,11 +85,14 @@ export class BoardsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
   @ApiResponseInternalServerErrorDecorator()
-  async createBoard(@Body() body: CreateBoardDto) {
+  async createBoard(
+    @Body() body: CreateBoardDto,
+    @CurrentUserDecorator() user,
+  ) {
     return this.boardsService.createBoard(
       body.title,
       body.description,
-      body.userId,
+      user.id,
     );
   }
 
@@ -81,6 +103,7 @@ export class BoardsController {
     status: 200,
     description: 'The User update Board for User ID',
   })
+  @ApiUpdateBoardResponses()
   @ApiResponseBadRequestDecorator(
     'Bad Request – Invalid board ID or missing param',
   )
@@ -88,13 +111,26 @@ export class BoardsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
   @ApiResponseInternalServerErrorDecorator()
-  async updateBoard(@Param('id') id: string, @Body() body: UpdateBoardDto) {
-    return this.boardsService.updateBoard(id, body.title, body.description);
+  async updateBoard(
+    @Param('id') id: string,
+    @Body() body: UpdateBoardDto,
+    @CurrentUserDecorator() user,
+  ) {
+    return this.boardsService.updateBoard(
+      id,
+      user.id,
+      body.title,
+      body.description,
+    );
   }
 
   @Delete(':id')
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'User deleted Board for User ID' })
+  @ApiOperation({
+    summary: 'User deleted Board for User ID',
+    description: 'Delete a specific board for the authenticated user',
+  })
+  @ApiDeleteBoardResponses()
   @ApiResponse({ status: 200, description: 'The User delete Board' })
   @ApiResponseBadRequestDecorator(
     'Bad Request – Invalid board ID or missing param',
@@ -103,7 +139,7 @@ export class BoardsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
   @ApiResponseInternalServerErrorDecorator()
-  async deleteBoard(@Param('id') id: string) {
-    return this.boardsService.deleteBoard(id);
+  async deleteBoard(@Param('id') id: string, @CurrentUserDecorator() user) {
+    return this.boardsService.deleteBoard(id, user.id);
   }
 }
