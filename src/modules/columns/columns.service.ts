@@ -29,8 +29,28 @@ export class ColumnsService {
     return this.columnRepository.create({ title, boardId });
   }
 
-  async updateColumn(id: string, title?: string) {
-    return this.columnRepository.update(id, { title });
+  async updateColumn(
+    id: string,
+    title?: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
+    const updatedColumn = await this.columnRepository.update(
+      id,
+      { title },
+      position,
+    );
+    return updatedColumn;
+  }
+
+  async updateColumnPositions(updates: { id: string; position: number }[]) {
+    const transactions = updates.map(({ id, position }) => {
+      return this.prisma.column.update({
+        where: { id },
+        data: { position },
+      });
+    });
+
+    return this.prisma.$transaction(transactions);
   }
 
   async deleteColumn(id: string) {
