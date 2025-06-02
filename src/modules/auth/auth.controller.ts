@@ -132,7 +132,7 @@ export class AuthController {
 
       res.clearCookie('access_token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // true в проде, false локально
+        secure: process.env.NODE_ENV === 'production', // 
         sameSite: 'none',
         domain,
         path: '/',
