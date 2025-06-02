@@ -128,21 +128,21 @@ export class AuthController {
 
       await this.authService.logout(email);
 
-      const domain = process.env.NODE_ENV === 'production' ? 'taskcraft.click' : 'localhost';
+      const isProduction = process.env.NODE_ENV === 'production';
 
       res.clearCookie('access_token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // 
-        sameSite: 'none',
-        domain,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
         path: '/',
       });
 
       res.clearCookie('refresh_token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
-        domain,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
         path: '/',
       });
 
