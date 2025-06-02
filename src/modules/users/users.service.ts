@@ -125,22 +125,24 @@ export class UsersService {
 
       const { accessToken, refreshToken } = await this.authService.generateTokens(updatedUser);
 
+      const isProduction = process.env.NODE_ENV === 'production';
+
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
         maxAge: Number(AUTH_CONFIG.expireJwt),
         path: '/',
-        sameSite: 'none',
-        domain: 'taskcraft.click',
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
       });
 
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
         maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
         path: '/',
-        sameSite: 'none',
-        domain: 'taskcraft.click',
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
       });
 
       return res.json({ user: updatedUser, accessToken });
