@@ -21,6 +21,7 @@ import {
 import { ColumnDto } from './dto/column.dto';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
+import { UpdateColumnDto } from './dto/update-column.dto';
 
 @Controller('columns')
 export class ColumnsController {
@@ -98,8 +99,8 @@ export class ColumnsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Column not found')
   @ApiResponseInternalServerErrorDecorator()
-  async updateColumn(@Param('id') id: string, @Body() body: ColumnDto) {
-    return this.columnsService.updateColumn(id, body.title);
+  async updateColumn(@Param('id') id: string, @Body() body: UpdateColumnDto) {
+    return this.columnsService.updateColumn(id, body.title, body.position);
   }
 
   @Delete(':id')
