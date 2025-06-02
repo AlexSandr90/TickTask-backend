@@ -85,22 +85,24 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
       maxAge: AUTH_CONFIG.expireJwt,
       path: '/',
-      sameSite: 'None',
-      domain: 'taskcraft.click',
+      sameSite: isProduction ? 'None' : 'Lax', // в проде None, иначе Lax
+      domain: isProduction ? 'taskcraft.click' : undefined, // локально domain не нужен
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       maxAge: AUTH_CONFIG.expireJwtRefresh,
       path: '/',
-      sameSite: 'None',
-      domain: 'taskcraft.click',
+      sameSite: isProduction ? 'None' : 'Lax',
+      domain: isProduction ? 'taskcraft.click' : undefined,
     });
 
     return res
@@ -125,22 +127,24 @@ export class AuthService {
         refreshToken: newRefreshToken,
       } = await this.generateTokens(user);
 
+      const isProduction = process.env.NODE_ENV === 'production';
+
       res.cookie('access_token', newAccessToken, {
         httpOnly: true,
-        secure: true,
+        secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
         maxAge: AUTH_CONFIG.expireJwt,
         path: '/',
-        sameSite: 'None',
-        domain: 'taskcraft.click',
+        sameSite: isProduction ? 'None' : 'Lax', // None требует secure
+        domain: isProduction ? 'taskcraft.click' : undefined, // домен не нужен на localhost
       });
 
       res.cookie('refresh_token', newRefreshToken, {
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
         maxAge: AUTH_CONFIG.expireJwtRefresh,
         path: '/',
-        sameSite: 'None',
-        domain: 'taskcraft.click',
+        sameSite: isProduction ? 'None' : 'Lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
       });
 
       return res.json({ access_token: newAccessToken });

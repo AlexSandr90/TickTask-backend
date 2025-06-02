@@ -172,20 +172,22 @@ export class AuthController {
 
       const { accessToken, refreshToken } = await this.authService.generateTokens(processedUser);
 
+      const isProduction = process.env.NODE_ENV === 'production';
+
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        domain: 'taskcraft.click',
+        secure: isProduction,                     // HTTPS только в проде
+        sameSite: isProduction ? 'none' : 'lax',  // в проде нужно none
+        domain: isProduction ? 'taskcraft.click' : undefined, // домен только в проде
         maxAge: Number(AUTH_CONFIG.expireJwt),
         path: '/',
       });
 
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        domain: 'taskcraft.click',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
         maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
         path: '/',
       });
