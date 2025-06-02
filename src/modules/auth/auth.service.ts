@@ -105,9 +105,8 @@ export class AuthService {
       domain: isProduction ? 'taskcraft.click' : undefined,
     });
 
-    return res
-      .status(HttpStatus.OK)
-      .json({ message: 'Successfully logged in' });
+    res.status(HttpStatus.OK).json({ message: 'Successfully logged in' });
+    return;
   }
 
   async refreshToken(
