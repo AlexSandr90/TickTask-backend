@@ -18,7 +18,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-
+import { ChangePasswordDto } from './dto/change-password.dto'
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../../guards/auth.guard';
@@ -289,5 +289,17 @@ export class UsersController {
     return {
       avatarUrl: this.supabaseAvatarService.getAvatarUrl(DEFAULT_AVATAR_PATH),
     };
+  }
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard) // Используем UseGuards и передаем JwtAuthGuard
+  async changePassword(
+    @Request() req: any,  // Получаем данные пользователя из запроса
+    @Body() changePasswordDto: ChangePasswordDto,  // DTO с данными для обновления пароля
+  ) {
+    const { currentPassword, newPassword } = changePasswordDto;
+    const userId = req.user.id;  // ID пользователя из JWT токена
+
+    // Вызываем сервис для изменения пароля
+    return this.usersService.changePassword(userId, currentPassword, newPassword);
   }
 }
