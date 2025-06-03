@@ -18,4 +18,5 @@ export class CreateBoardDto {
     example: '663a3fa5f7cfc3d98dcbfdba',
   })
   userId: string;
+  position?: number;
 }

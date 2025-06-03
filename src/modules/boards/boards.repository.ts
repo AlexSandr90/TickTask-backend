@@ -5,20 +5,23 @@ import { UpdateBoardDto } from './dto/update-board.dto';
 
 @Injectable()
 export class BoardsRepository {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async findAll(userId: string) {
-    return this.prisma.board.findMany({ where: { userId } });
+  constructor(private readonly prisma: PrismaService) {
   }
 
-  async findAllWithColumns(userId: string, position: 'asc' | 'desc') {
+  async findAll(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.board.findMany({
       where: { userId },
+      orderBy: { position },
+    });
+  }
+  async findAllWithColumns(userId: string, position: 'asc' | 'desc' = 'asc') {
+    return this.prisma.board.findMany({
+      where: { userId },
+      orderBy: { position }, // сортировка самих досок
       include: {
         columns: {
-          orderBy: { position },
-          include: {
-            tasks: { orderBy: { position } },
+          orderBy: {
+            position: 'asc', // сортировка колонок внутри доски
           },
         },
       },
@@ -66,22 +69,28 @@ export class BoardsRepository {
       },
     });
   }
-
-  async create(boardData: CreateBoardDto) {
+  async create(boardData: CreateBoardDto & { position?: number }) {
     return this.prisma.board.create({
       data: {
         title: boardData.title,
         description: boardData.description,
         userId: boardData.userId,
+        position: boardData.position ?? 0,
       },
     });
   }
-
   async update(id: string, data: UpdateBoardDto) {
     return this.prisma.board.update({ where: { id }, data });
   }
 
   async delete(id: string) {
     return this.prisma.board.delete({ where: { id } });
+  }
+
+  async findLastBoardByUser(userId: string) {
+    return this.prisma.board.findFirst({
+      where: { userId },
+      orderBy: { position: 'desc' },
+    });
   }
 }

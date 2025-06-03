@@ -35,6 +35,7 @@ model Board {
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   columns     Column[]
+  position    Int      @default(0) // Добавляем позицию
 }
 
 model Column {
