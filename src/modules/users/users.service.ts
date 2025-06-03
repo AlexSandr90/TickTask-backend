@@ -25,7 +25,8 @@ export class UsersService {
     private readonly supabaseService: SupabaseAvatarService,
     private readonly jwtService: JwtService,
     private readonly authService: AuthService,  // добавьте сюда
-  ) {}
+  ) {
+  }
 
   async findOne(email: string) {
     const user = await this.usersRepository.findByEmail(email);
@@ -219,6 +220,22 @@ export class UsersService {
         userId,
         DEFAULT_AVATAR_PATH,
       );
-    } catch (e) {}
+    } catch (e) {
+    }
+  }
+
+  async getUserWithAvatarUrl(email: string) {
+    const user = await this.usersRepository.findByEmail(email);
+    if (!user) throw new NotFoundException('User not found');
+
+    const avatarUrl = user.avatarPath
+      ? this.supabaseService.getAvatarUrl(user.avatarPath)
+      : this.supabaseService.getAvatarUrl(DEFAULT_AVATAR_PATH);
+
+    const { passwordHash, refreshToken, ...safeUser } = user;
+    return {
+      ...safeUser,
+      avatarUrl,
+    };
   }
 }
