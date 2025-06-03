@@ -20,7 +20,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:4200',
     ],
-    methods: 'GET,POST,PUT,DELETE,OPTIONS', // Разрешаем только GET, POST, PUT, DELETE методы
+    methods: 'GET,POST,PUT,DELETE,OPTIONS, PATCH', // Разрешаем только GET, POST, PUT, DELETE методы
     allowedHeaders: 'Content-Type, Authorization', // Разрешаем только заголовки Content-Type и Authorization
     credentials: true, // Разрешаем отправку cookies
   });
