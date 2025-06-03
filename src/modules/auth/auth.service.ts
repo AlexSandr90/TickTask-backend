@@ -205,4 +205,25 @@ export class AuthService {
       },
     });
   }
+  async setPasswordForGoogleUser(userId: string, newPassword: string): Promise<{ message: string }> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.googleId) {
+      throw new BadRequestException('Only Google users can use this method');
+    }
+
+    if (user.passwordHash) {
+      throw new BadRequestException('Password is already set');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersRepository.updatePassword(user.id, hashedPassword);
+
+    return { message: 'Password has been set successfully' };
+  }
+
 }
