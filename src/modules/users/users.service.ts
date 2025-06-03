@@ -37,7 +37,10 @@ export class UsersService {
 
     const { passwordHash, googleId, passwordResetToken, ...safeUser } = user;
 
-    return safeUser;
+    return {
+      ...safeUser,
+      hasPassword: !!passwordHash,
+    };
   }
 
   async findByEmail(email: string) {
