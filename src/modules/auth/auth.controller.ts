@@ -30,7 +30,7 @@ import {
 import { APP_CONFIG } from '../../configurations/app.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
-
+import { SetGooglePasswordDto } from './dto/set-password.dto';
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -216,5 +216,14 @@ export class AuthController {
     @Body('newPassword') newPassword: string,
   ): Promise<void> {
     await this.authService.resetPassword(token, newPassword);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('set-password')
+  async setGooglePassword(
+    @Req() req,
+    @Body() dto: SetGooglePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.authService.setPasswordForGoogleUser(req.user.id, dto.newPassword);
   }
 }
