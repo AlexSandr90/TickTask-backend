@@ -239,6 +239,7 @@ export class UsersService {
     return {
       ...safeUser,
       avatarUrl,
+      hasPassword: !!passwordHash,
     };
   }
 }
