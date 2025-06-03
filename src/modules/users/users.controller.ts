@@ -75,13 +75,12 @@ export class UsersController {
       throw new BadRequestException('Email address not found in token');
     }
 
-    const user = await this.usersService.findOne(email);
+    const user = await this.usersService.getUserWithAvatarUrl(email); // <--- ВОТ ЭТО
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    const { refreshToken, ...userData } = user;
-    return userData;
+    return user; // refreshToken и пароль уже отброшены в сервисе
   }
 
   @Get(':id')
