@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersRepository } from './users.repository';
@@ -180,9 +181,32 @@ export class UsersService {
     }
   }
 
-  async updatePassword(userId: string, newPassword: string) {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    return this.usersRepository.updatePassword(userId, hashedPassword);
+  // Обновление пароля
+  async changePassword(
+    userId: string,  // ID пользователя (из JWT токена)
+    currentPassword: string,  // Текущий пароль пользователя
+    newPassword: string,      // Новый пароль
+  ): Promise<string> {
+    // Шаг 1: Получаем пользователя по ID
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Шаг 2: Проверяем, правильный ли текущий пароль
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Password hash not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+
+    // Шаг 3: Хешируем новый пароль
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Шаг 4: Обновляем пароль в базе данных
+    await this.usersRepository.updatePassword(userId, passwordHash);
+
+    return 'Password updated successfully';
   }
 
   async updatePasswordResetToken(userId: string, newPassword: string) {
