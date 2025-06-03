@@ -86,7 +86,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
     const isProduction = process.env.NODE_ENV === 'production';
-
+    console.log('NODE_ENV:', process.env.NODE_ENV);
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
