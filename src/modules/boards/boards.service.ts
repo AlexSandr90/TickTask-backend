@@ -6,7 +6,7 @@ export class BoardsService {
   constructor(private readonly boardsRepository: BoardsRepository) {}
 
   async getAllBoards(userId: string) {
-    return this.boardsRepository.findAll(userId);
+    return this.boardsRepository.findAll(userId, 'asc'); // сортировка по position
   }
 
   async findBoardById(id: string, userId: string) {
@@ -45,7 +45,15 @@ export class BoardsService {
   }
 
   async createBoard(title: string, description: string, userId: string) {
-    return this.boardsRepository.create({ title, description, userId });
+    const lastBoard = await this.boardsRepository.findLastBoardByUser(userId);
+    const position = lastBoard ? lastBoard.position + 1 : 0;
+
+    return this.boardsRepository.create({
+      title,
+      description,
+      userId,
+      position,
+    });
   }
 
   async updateBoard(

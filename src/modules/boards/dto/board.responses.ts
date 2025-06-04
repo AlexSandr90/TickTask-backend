@@ -45,8 +45,14 @@ export class BoardResponseDTO {
     format: 'date-time',
   })
   updateDate: string;
-}
 
+  @ApiProperty({
+    description: 'Board position for ordering',
+    example: 1,
+    type: 'number',
+  })
+  position: number;  // <--- добавлено поле позиции
+}
 export class BoardsListResponseDto {
   @ApiProperty({
     description: 'List of user boards',

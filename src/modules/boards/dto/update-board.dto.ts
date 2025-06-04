@@ -12,4 +12,5 @@ export class UpdateBoardDto {
     example: 'New Board description',
   })
   description?: string;
+  position?: number; // <-- добавь
 }
