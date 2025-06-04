@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(timezone);
 
 @Injectable()
 export class UsersRepository {
@@ -55,6 +59,7 @@ export class UsersRepository {
     username: string;
     email: string;
     passwordHash: string;
+    timezone: string;
   }) {
     return this.prisma.user.create({
       data: { ...data, isActive: false },
@@ -150,5 +155,23 @@ export class UsersRepository {
       where: { id: userId },
       data: { avatarPath },
     });
+  }
+
+  // ------------TIMEZONE------------
+
+  updateTimezone(userId: string, timezone: string): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { timezone },
+    });
+  }
+
+  isValidTimezone(timezone: string): boolean {
+    try {
+      dayjs().tz(timezone);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

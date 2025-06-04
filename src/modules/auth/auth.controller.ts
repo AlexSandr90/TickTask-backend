@@ -1,5 +1,4 @@
-import { Request } from 'express';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import {
   Get,
   Req,
@@ -20,7 +19,6 @@ import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import { UserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { generateJwtToken } from '../../common/utils/jwt.util';
 import {
   ApiResponseNotFoundDecorator,
   ApiResponseBadRequestDecorator,
@@ -31,6 +29,7 @@ import { APP_CONFIG } from '../../configurations/app.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { SetGooglePasswordDto } from './dto/set-password.dto';
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -51,7 +50,7 @@ export class AuthController {
   @ApiResponseBadRequestDecorator()
   @ApiResponseInternalServerErrorDecorator()
   async register(@Body() userDto: UserDto): Promise<UserWithoutPassword> {
-    const { username, email, password, confirmPassword } = userDto;
+    const { username, email, password, confirmPassword, timezone } = userDto;
 
     if (password !== confirmPassword) {
       throw new BadRequestException('Passwords do not match.');
@@ -62,6 +61,7 @@ export class AuthController {
       email,
       password,
       confirmPassword,
+      timezone,
     );
   }
 
@@ -171,15 +171,15 @@ export class AuthController {
         });
       }
 
-
-      const { accessToken, refreshToken } = await this.authService.generateTokens(processedUser);
+      const { accessToken, refreshToken } =
+        await this.authService.generateTokens(processedUser);
 
       const isProduction = process.env.NODE_ENV === 'production';
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: isProduction,                     // HTTPS только в проде
-        sameSite: isProduction ? 'none' : 'lax',  // в проде нужно none
+        secure: isProduction, // HTTPS только в проде
+        sameSite: isProduction ? 'none' : 'lax', // в проде нужно none
         domain: isProduction ? 'taskcraft.click' : undefined, // домен только в проде
         maxAge: Number(AUTH_CONFIG.expireJwt),
         path: '/',
@@ -224,6 +224,9 @@ export class AuthController {
     @Req() req,
     @Body() dto: SetGooglePasswordDto,
   ): Promise<{ message: string }> {
-    return this.authService.setPasswordForGoogleUser(req.user.id, dto.newPassword);
+    return this.authService.setPasswordForGoogleUser(
+      req.user.id,
+      dto.newPassword,
+    );
   }
 }

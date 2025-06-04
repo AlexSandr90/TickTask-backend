@@ -1,9 +1,9 @@
 import {
-  Injectable,
-  UnauthorizedException,
-  Response,
-  HttpStatus,
   BadRequestException,
+  HttpStatus,
+  Injectable,
+  Response,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
@@ -22,17 +22,21 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-  ) {
-  }
+  ) {}
 
   async register(
     username: string,
     email: string,
     password: string,
     confirmPassword: string,
+    timezone: string,
   ): Promise<UserWithoutPassword> {
     if (password !== confirmPassword) {
       throw new UnauthorizedException('Passwords not match!');
+    }
+
+    if (timezone !== 'UTC' && !this.usersRepository.isValidTimezone(timezone)) {
+      throw new BadRequestException('Timezone not valid');
     }
 
     const existUser = await this.usersRepository.findByEmail(email);
@@ -46,6 +50,7 @@ export class AuthService {
       username,
       email,
       passwordHash: hashedPassword,
+      timezone,
     });
     const { passwordHash, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
@@ -121,10 +126,8 @@ export class AuthService {
         throw new UnauthorizedException('User not found!');
       }
 
-      const {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      } = await this.generateTokens(user);
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+        await this.generateTokens(user);
 
       const isProduction = process.env.NODE_ENV === 'production';
 
@@ -151,7 +154,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
-
 
   async googleLogin(user: any): Promise<any> {
     try {
@@ -205,7 +207,11 @@ export class AuthService {
       },
     });
   }
-  async setPasswordForGoogleUser(userId: string, newPassword: string): Promise<{ message: string }> {
+
+  async setPasswordForGoogleUser(
+    userId: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.usersRepository.findById(userId);
 
     if (!user) {
@@ -225,5 +231,4 @@ export class AuthService {
 
     return { message: 'Password has been set successfully' };
   }
-
 }

@@ -1,35 +1,34 @@
 import {
-  Controller,
   Get,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  Post,
-  BadRequestException,
-  UseGuards,
-  Request,
-  UnauthorizedException,
-  HttpStatus,
-  UseInterceptors,
-  UploadedFile,
   Put,
-  NotFoundException,
   Res,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Request,
+  UseGuards,
+  Controller,
+  HttpStatus,
+  UploadedFile,
+  UseInterceptors,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ChangePasswordDto } from './dto/change-password.dto'
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../../guards/auth.guard';
-import { IsActiveGuard } from '../../guards/isActive.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import {
   ApiBody,
+  ApiResponse,
   ApiConsumes,
   ApiOperation,
-  ApiResponse,
 } from '@nestjs/swagger';
 import {
   ApiResponseNotFoundDecorator,
@@ -40,6 +39,7 @@ import {
 } from '../../common/decorators/swagger';
 import { AuthProtectedDecorator } from '../../common/decorators/auth.decorator';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
+import { UpdateUserTimezoneDto } from './dto/update-user-timezone.dto';
 
 interface RequestWithUser extends Request {
   user: {
@@ -186,10 +186,13 @@ export class UsersController {
   @ApiResponseInternalServerErrorDecorator()
   async activateUser(
     @Param('token') token: string,
-    @Res() res: Response,  // <--- нужно получить объект Response
+    @Res() res: Response, // <--- нужно получить объект Response
   ) {
     try {
-      return await this.usersService.activateUserByTokenAndGenerateToken(token, res);
+      return await this.usersService.activateUserByTokenAndGenerateToken(
+        token,
+        res,
+      );
     } catch (error) {
       throw new BadRequestException('Failed to activate user');
     }
@@ -290,16 +293,95 @@ export class UsersController {
       avatarUrl: this.supabaseAvatarService.getAvatarUrl(DEFAULT_AVATAR_PATH),
     };
   }
+
   @Patch('change-password')
   @UseGuards(JwtAuthGuard) // Используем UseGuards и передаем JwtAuthGuard
   async changePassword(
-    @Request() req: any,  // Получаем данные пользователя из запроса
-    @Body() changePasswordDto: ChangePasswordDto,  // DTO с данными для обновления пароля
+    @Request() req: any, // Получаем данные пользователя из запроса
+    @Body() changePasswordDto: ChangePasswordDto, // DTO с данными для обновления пароля
   ) {
     const { currentPassword, newPassword } = changePasswordDto;
-    const userId = req.user.id;  // ID пользователя из JWT токена
+    const userId = req.user.id; // ID пользователя из JWT токена
 
     // Вызываем сервис для изменения пароля
-    return this.usersService.changePassword(userId, currentPassword, newPassword);
+    return this.usersService.changePassword(
+      userId,
+      currentPassword,
+      newPassword,
+    );
+  }
+
+  @Get('timezones')
+  @AuthProtectedDecorator()
+  @ApiOperation({ summary: 'Get User Timezones' })
+  @ApiResponse({
+    status: 200,
+    description: 'User get all timezones successfully',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  getAvailableTimezones() {
+    return {
+      timezones: this.usersService.getAvailableTimezones(),
+    };
+  }
+
+  @Put('timezone')
+  @AuthProtectedDecorator()
+  @ApiOperation({ summary: 'Update User Timezone' })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated timezone successfully',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async updateTimezone(
+    @Request() req,
+    @Body() updateUserTimezoneDto: UpdateUserTimezoneDto,
+  ) {
+    const userId = req.user.id;
+
+    const updatedUser = await this.usersService.updateUserTimeZone(
+      userId,
+      updateUserTimezoneDto.timezone,
+    );
+
+    return {
+      message: 'User updated successfully',
+      timezone: updatedUser.timezone,
+    };
+  }
+
+  @Get('current-time')
+  @AuthProtectedDecorator()
+  @ApiOperation({ summary: 'Update User Timezone' })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated timezone successfully',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async getCurrentTimeInUserTimezone(@Request() req) {
+    const user = await this.usersService.findOneById(req.user.id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      currentTime: this.usersService.getCurrentTimeInUserTimezone(
+        user.timezone,
+      ),
+      timezone: user.timezone,
+    };
   }
 }
