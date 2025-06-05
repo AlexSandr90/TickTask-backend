@@ -202,7 +202,7 @@ export class UsersService {
 
   // Обновление пароля
   async changePassword(
-    userId: string, // ID пользователя (из JWT токена)
+    userId: string,
     currentPassword: string, // Текущий пароль пользователя
     newPassword: string, // Новый пароль
   ): Promise<string> {
