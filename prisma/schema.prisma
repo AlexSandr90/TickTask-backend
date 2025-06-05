@@ -23,6 +23,7 @@ model User {
   googleId           String?   @unique
   passwordResetToken String?
   avatarPath         String?
+  timezone           String    @default("UTC")
   boards             Board[]
 }
 

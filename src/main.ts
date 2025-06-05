@@ -1,13 +1,13 @@
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { configureHelmet } from './configurations/helmet.config';
 import { PrismaService } from '../prisma/prisma.service';
 import { GoogleStrategy } from './modules/auth/strategy/google.strategy';
-import * as passport from 'passport';
-import * as cookieParser from 'cookie-parser';
+import passport from 'passport';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 

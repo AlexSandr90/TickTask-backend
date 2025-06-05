@@ -44,4 +44,12 @@ export class UserDto {
   @IsOptional()
   @IsBoolean({ message: 'The field must be of type Boolean' })
   isActive?: boolean; // Необязательное поле для статуса активации
+
+  @ApiProperty({
+    example: 'Europe/Kyiv',
+    description: 'User timezone',
+    default: 'UTC',
+  })
+  @IsString()
+  timezone: string;
 }

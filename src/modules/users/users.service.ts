@@ -4,12 +4,12 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersRepository } from './users.repository';
 import { UpdateUserDto } from './dto/user.dto';
-import { generateJwtToken, verifyJwtToken } from '../../common/utils/jwt.util';
+import { generateJwtToken } from '../../common/utils/jwt.util';
 import * as process from 'node:process';
 import { sendVerificationEmail } from '../../email/email.service';
 import { User } from '@prisma/client';
@@ -18,6 +18,12 @@ import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../auth/auth.service';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @Injectable()
 export class UsersService {
@@ -25,9 +31,8 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
     private readonly supabaseService: SupabaseAvatarService,
     private readonly jwtService: JwtService,
-    private readonly authService: AuthService,  // добавьте сюда
-  ) {
-  }
+    private readonly authService: AuthService, // добавьте сюда
+  ) {}
 
   async findOne(email: string) {
     const user = await this.usersRepository.findByEmail(email);
@@ -52,8 +57,18 @@ export class UsersService {
     return await this.usersRepository.findById(id);
   }
 
-  async createUser(username: string, email: string, passwordHash: string) {
-    return this.usersRepository.createUser({ username, email, passwordHash });
+  async createUser(
+    username: string,
+    email: string,
+    passwordHash: string,
+    timezone: string,
+  ) {
+    return this.usersRepository.createUser({
+      username,
+      email,
+      passwordHash,
+      timezone,
+    });
   }
 
   async update(email: string, data: UpdateUserDto) {
@@ -113,7 +128,9 @@ export class UsersService {
         secret: process.env.JWT_MAGIC_SECRET,
       });
     } catch (error) {
-      throw new BadRequestException(`Invalid or expired link. Error: ${error.message || error}`);
+      throw new BadRequestException(
+        `Invalid or expired link. Error: ${error.message || error}`,
+      );
     }
 
     const user = await this.usersRepository.findByEmail(decoded.email);
@@ -126,9 +143,12 @@ export class UsersService {
     }
 
     try {
-      const updatedUser = await this.usersRepository.activateUser(decoded.email);
+      const updatedUser = await this.usersRepository.activateUser(
+        decoded.email,
+      );
 
-      const { accessToken, refreshToken } = await this.authService.generateTokens(updatedUser);
+      const { accessToken, refreshToken } =
+        await this.authService.generateTokens(updatedUser);
 
       const isProduction = process.env.NODE_ENV === 'production';
 
@@ -156,7 +176,6 @@ export class UsersService {
     }
   }
 
-
   async findOrCreateGoogleUser(data: {
     googleId: string;
     email: string;
@@ -183,9 +202,9 @@ export class UsersService {
 
   // Обновление пароля
   async changePassword(
-    userId: string,  // ID пользователя (из JWT токена)
-    currentPassword: string,  // Текущий пароль пользователя
-    newPassword: string,      // Новый пароль
+    userId: string, // ID пользователя (из JWT токена)
+    currentPassword: string, // Текущий пароль пользователя
+    newPassword: string, // Новый пароль
   ): Promise<string> {
     // Шаг 1: Получаем пользователя по ID
     const user = await this.usersRepository.findById(userId);
@@ -198,7 +217,10 @@ export class UsersService {
       throw new UnauthorizedException('Password hash not found');
     }
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
 
     // Шаг 3: Хешируем новый пароль
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -247,8 +269,7 @@ export class UsersService {
         userId,
         DEFAULT_AVATAR_PATH,
       );
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   async getUserWithAvatarUrl(email: string) {
@@ -265,5 +286,96 @@ export class UsersService {
       avatarUrl,
       hasPassword: !!passwordHash,
     };
+  }
+
+  async updateUserTimeZone(userId: string, timezone: string): Promise<User> {
+    if (!this.usersRepository.isValidTimezone(timezone)) {
+      throw new BadRequestException('Timezone not valid');
+    }
+
+    return this.usersRepository.updateTimezone(userId, timezone);
+  }
+
+  convertToUserTimezone(date: Date, userTimezone: string): string {
+    return dayjs(date).tz(userTimezone).format();
+  }
+
+  convertFromUserTimezone(dateString: string, userTimezone: string): Date {
+    return dayjs.tz(dateString, userTimezone).utc().toDate();
+  }
+
+  getAvailableTimezones(): string[] {
+    try {
+      return Intl.supportedValuesOf('timeZone');
+    } catch (e) {
+      return this.getFallbackTimezones();
+    }
+  }
+
+  private getFallbackTimezones(): string[] {
+    return [
+      'UTC',
+      // Europe
+      'Europe/London',
+      'Europe/Paris',
+      'Europe/Berlin',
+      'Europe/Rome',
+      'Europe/Madrid',
+      'Europe/Kyiv',
+      'Europe/Moscow',
+      'Europe/Istanbul',
+      'Europe/Amsterdam',
+      'Europe/Vienna',
+      'Europe/Warsaw',
+      'Europe/Prague',
+
+      // America
+      'America/New_York',
+      'America/Chicago',
+      'America/Denver',
+      'America/Los_Angeles',
+      'America/Toronto',
+      'America/Vancouver',
+      'America/Mexico_City',
+      'America/Sao_Paulo',
+      'America/Buenos_Aires',
+      'America/Lima',
+      'America/Bogota',
+
+      // Asia
+      'Asia/Tokyo',
+      'Asia/Shanghai',
+      'Asia/Kolkata',
+      'Asia/Dubai',
+      'Asia/Bangkok',
+      'Asia/Singapore',
+      'Asia/Seoul',
+      'Asia/Hong_Kong',
+      'Asia/Jakarta',
+      'Asia/Manila',
+      'Asia/Karachi',
+      'Asia/Tehran',
+
+      // Australia & Oceania
+      'Australia/Sydney',
+      'Australia/Melbourne',
+      'Australia/Perth',
+      'Pacific/Auckland',
+      'Pacific/Honolulu',
+
+      // Africa
+      'Africa/Cairo',
+      'Africa/Johannesburg',
+      'Africa/Lagos',
+      'Africa/Nairobi',
+
+      // Others
+      'Atlantic/Reykjavik',
+      'Indian/Mauritius',
+    ];
+  }
+
+  getCurrentTimeInUserTimezone(userTimezone: string): string {
+    return dayjs().tz(userTimezone).format();
   }
 }

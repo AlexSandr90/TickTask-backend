@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
-    "typeRoots": ["@types", "node_modules/@types"],
+    "typeRoots": [
+      "@types",
+      "node_modules/@types"
+    ],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
