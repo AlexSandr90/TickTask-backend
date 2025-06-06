@@ -1,21 +1,21 @@
 import {
-  Get,
-  Put,
-  Res,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Request,
-  UseGuards,
-  Controller,
-  HttpStatus,
-  UploadedFile,
-  UseInterceptors,
-  NotFoundException,
   BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Request,
+  Res,
   UnauthorizedException,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -26,16 +26,16 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import {
   ApiBody,
-  ApiResponse,
   ApiConsumes,
   ApiOperation,
+  ApiResponse,
 } from '@nestjs/swagger';
 import {
-  ApiResponseNotFoundDecorator,
-  ApiResponseForbiddenDecorator,
   ApiResponseBadRequestDecorator,
-  ApiResponseUnauthorizedDecorator,
+  ApiResponseForbiddenDecorator,
   ApiResponseInternalServerErrorDecorator,
+  ApiResponseNotFoundDecorator,
+  ApiResponseUnauthorizedDecorator,
 } from '../../common/decorators/swagger';
 import { AuthProtectedDecorator } from '../../common/decorators/auth.decorator';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
@@ -83,24 +83,22 @@ export class UsersController {
     return user; // refreshToken и пароль уже отброшены в сервисе
   }
 
-  @Get(':id')
+  @Get('timezones')
   @AuthProtectedDecorator()
-  @ApiOperation({ summary: 'Get User By id' })
+  @ApiOperation({ summary: 'Get User Timezones' })
   @ApiResponse({
     status: 200,
-    description: 'The user received by id',
+    description: 'User get all timezones successfully',
   })
   @ApiResponseBadRequestDecorator()
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator()
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
-  async getUserById(@Param('id') id: string) {
-    const user = await this.usersService.findOneById(id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
+  getAvailableTimezones() {
+    return {
+      timezones: this.usersService.getAvailableTimezones(),
+    };
   }
 
   @Patch('me')
@@ -311,24 +309,6 @@ export class UsersController {
     );
   }
 
-  @Get('timezones')
-  @AuthProtectedDecorator()
-  @ApiOperation({ summary: 'Get User Timezones' })
-  @ApiResponse({
-    status: 200,
-    description: 'User get all timezones successfully',
-  })
-  @ApiResponseBadRequestDecorator()
-  @ApiResponseUnauthorizedDecorator()
-  @ApiResponseForbiddenDecorator()
-  @ApiResponseNotFoundDecorator()
-  @ApiResponseInternalServerErrorDecorator()
-  getAvailableTimezones() {
-    return {
-      timezones: this.usersService.getAvailableTimezones(),
-    };
-  }
-
   @Put('timezone')
   @AuthProtectedDecorator()
   @ApiOperation({ summary: 'Update User Timezone' })
@@ -358,7 +338,7 @@ export class UsersController {
     };
   }
 
-  @Get('current-time')
+  @Get('current-time/:userId')
   @AuthProtectedDecorator()
   @ApiOperation({ summary: 'Update User Timezone' })
   @ApiResponse({
@@ -370,8 +350,8 @@ export class UsersController {
   @ApiResponseForbiddenDecorator()
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
-  async getCurrentTimeInUserTimezone(@Request() req) {
-    const user = await this.usersService.findOneById(req.user.id);
+  async getCurrentTimeInUserTimezone(@Param('userId') userId: string) {
+    const user = await this.usersService.findOneById(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -383,5 +363,25 @@ export class UsersController {
       ),
       timezone: user.timezone,
     };
+  }
+
+  @Get(':id')
+  @AuthProtectedDecorator()
+  @ApiOperation({ summary: 'Get User By id' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user received by id',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async getUserById(@Param('id') id: string) {
+    const user = await this.usersService.findOneById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 }
