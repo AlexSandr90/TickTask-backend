@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateColumnDto {
   @ApiProperty({
@@ -15,4 +15,12 @@ export class CreateColumnDto {
   })
   @IsNotEmpty()
   boardId: string;
+
+  @ApiPropertyOptional({
+    description: 'Board position',
+    example: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  position?: number;
 }

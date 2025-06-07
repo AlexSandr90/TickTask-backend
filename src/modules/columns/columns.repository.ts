@@ -64,9 +64,17 @@ export class ColumnsRepository {
   }
 
   async create(columnData: CreateColumnDto) {
+    const maxPositionResult = await this.prisma.column.aggregate({
+      where: { boardId: columnData.boardId },
+      _max: { position: true },
+    });
+
+    const nextPosition = (maxPositionResult._max.position ?? -1) + 1;
+
     return this.prisma.column.create({
       data: {
         title: columnData.title,
+        position: nextPosition,
         board: { connect: { id: columnData.boardId } },
       },
     });
