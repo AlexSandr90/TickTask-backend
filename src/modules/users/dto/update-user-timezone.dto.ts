@@ -1,12 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+
+import { IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserTimezoneDto {
-  @ApiProperty({
-    description: 'User timezone',
+  @ApiPropertyOptional({
     example: 'Europe/Kyiv',
+    description: 'User timezone',
+    default: 'UTC',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   timezone: string;
 }

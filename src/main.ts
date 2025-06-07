@@ -42,7 +42,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+      skipMissingProperties: false, // по умолчанию false — и это ок
+    }),
+  );
+
   await app.listen(port);
   console.log(`[bootstrap] server is running on a port: ${port}`);
 }
