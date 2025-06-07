@@ -50,7 +50,13 @@ export class AuthController {
   @ApiResponseBadRequestDecorator()
   @ApiResponseInternalServerErrorDecorator()
   async register(@Body() userDto: UserDto): Promise<UserWithoutPassword> {
-    const { username, email, password, confirmPassword, timezone } = userDto;
+    const {
+      username,
+      email,
+      password,
+      confirmPassword,
+      timezone = 'UTC',
+    } = userDto;
 
     if (password !== confirmPassword) {
       throw new BadRequestException('Passwords do not match.');

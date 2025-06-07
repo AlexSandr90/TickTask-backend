@@ -29,13 +29,15 @@ export class AuthService {
     email: string,
     password: string,
     confirmPassword: string,
-    timezone: string,
+    timezone?: string,
   ): Promise<UserWithoutPassword> {
     if (password !== confirmPassword) {
       throw new UnauthorizedException('Passwords not match!');
     }
 
-    if (timezone !== 'UTC' && !this.usersRepository.isValidTimezone(timezone)) {
+    const finalTimezone = timezone ?? 'UTC';
+
+    if (finalTimezone !== 'UTC' && !this.usersRepository.isValidTimezone(finalTimezone)) {
       throw new BadRequestException('Timezone not valid');
     }
 
@@ -50,7 +52,7 @@ export class AuthService {
       username,
       email,
       passwordHash: hashedPassword,
-      timezone,
+      timezone: finalTimezone,
     });
     const { passwordHash, ...userWithoutPassword } = newUser;
     return userWithoutPassword;

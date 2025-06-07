@@ -51,5 +51,5 @@ export class UserDto {
     default: 'UTC',
   })
   @IsString()
-  timezone: string;
+  timezone?: string;
 }
