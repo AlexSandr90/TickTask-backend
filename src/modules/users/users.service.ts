@@ -61,7 +61,7 @@ export class UsersService {
     username: string,
     email: string,
     passwordHash: string,
-    timezone: string,
+    timezone: string = 'UTC', // ✅ по умолчанию
   ) {
     return this.usersRepository.createUser({
       username,

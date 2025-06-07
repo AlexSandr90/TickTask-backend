@@ -50,6 +50,7 @@ export class UserDto {
     description: 'User timezone',
     default: 'UTC',
   })
+  @IsOptional()
   @IsString()
   timezone?: string;
 }
