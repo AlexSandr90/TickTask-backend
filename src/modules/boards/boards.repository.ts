@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
+import { getNextPosition } from '../../common/utils/position.util';
 
 @Injectable()
 export class BoardsRepository {
-  constructor(private readonly prisma: PrismaService) {
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.board.findMany({
@@ -14,6 +14,7 @@ export class BoardsRepository {
       orderBy: { position },
     });
   }
+
   async findAllWithColumns(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.board.findMany({
       where: { userId },
@@ -69,16 +70,22 @@ export class BoardsRepository {
       },
     });
   }
+
   async create(boardData: CreateBoardDto & { position?: number }) {
+    const nextPosition = await getNextPosition(this.prisma, 'board', {
+      userId: boardData.userId,
+    });
+
     return this.prisma.board.create({
       data: {
         title: boardData.title,
         description: boardData.description,
         userId: boardData.userId,
-        position: boardData.position ?? 0,
+        position: nextPosition,
       },
     });
   }
+
   async update(id: string, data: UpdateBoardDto) {
     return this.prisma.board.update({ where: { id }, data });
   }

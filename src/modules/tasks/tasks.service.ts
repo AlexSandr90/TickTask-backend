@@ -5,8 +5,8 @@ import { TasksRepository } from './tasks.repository';
 export class TasksService {
   constructor(private readonly tasksRepository: TasksRepository) {}
 
-  async getAllTasks(columnId: string) {
-    return this.tasksRepository.findAll(columnId);
+  async getAllTasks(columnId: string, position: 'asc' | 'desc' = 'asc') {
+    return this.tasksRepository.findAll(columnId, position);
   }
 
   async findTaskById(id: string) {
