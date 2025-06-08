@@ -1,22 +1,22 @@
 import {
-  Get,
-  Put,
-  Post,
-  Body,
-  Param,
-  Query,
-  Delete,
-  Controller,
   BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import {
-  ApiResponseNotFoundDecorator,
-  ApiResponseForbiddenDecorator,
   ApiResponseBadRequestDecorator,
-  ApiResponseUnauthorizedDecorator,
+  ApiResponseForbiddenDecorator,
   ApiResponseInternalServerErrorDecorator,
+  ApiResponseNotFoundDecorator,
+  ApiResponseUnauthorizedDecorator,
 } from '../../common/decorators/swagger';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -40,12 +40,15 @@ export class TasksController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator('Tasks not found')
   @ApiResponseInternalServerErrorDecorator()
-  async getAllTasks(@Query('columnId') columnId: string) {
+  async getAllTasks(
+    @Query('columnId') columnId: string,
+    @Query('position') position?: 'asc' | 'desc',
+  ) {
     if (!columnId) {
       throw new BadRequestException('Missing columnId');
     }
 
-    return this.tasksService.getAllTasks(columnId);
+    return this.tasksService.getAllTasks(columnId, position ?? 'asc');
   }
 
   @Get(':id')

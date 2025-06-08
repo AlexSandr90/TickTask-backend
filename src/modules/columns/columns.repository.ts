@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ColumnDto } from './dto/column.dto';
 import { CreateColumnDto } from './dto/create-column.dto';
+import { getNextPosition } from '../../common/utils/position.util';
 
 @Injectable()
 export class ColumnsRepository {
@@ -64,12 +65,9 @@ export class ColumnsRepository {
   }
 
   async create(columnData: CreateColumnDto) {
-    const maxPositionResult = await this.prisma.column.aggregate({
-      where: { boardId: columnData.boardId },
-      _max: { position: true },
+    const nextPosition = await getNextPosition(this.prisma, 'column', {
+      boardId: columnData.boardId,
     });
-
-    const nextPosition = (maxPositionResult._max.position ?? -1) + 1;
 
     return this.prisma.column.create({
       data: {
