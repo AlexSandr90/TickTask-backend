@@ -89,11 +89,7 @@ export class BoardsController {
     @Body() body: CreateBoardDto,
     @CurrentUserDecorator() user,
   ) {
-    return this.boardsService.createBoard(
-      body.title,
-      body.description,
-      user.id,
-    );
+    return this.boardsService.createBoard(body, user.id);
   }
 
   @Put(':id')

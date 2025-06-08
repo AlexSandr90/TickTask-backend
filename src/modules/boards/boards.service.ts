@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { BoardsRepository } from './boards.repository';
+import { CreateBoardDto } from './dto/create-board.dto';
+import { getNextPosition } from '../../common/utils/position.util';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class BoardsService {
-  constructor(private readonly boardsRepository: BoardsRepository) {}
-
+  constructor(
+    private readonly boardsRepository: BoardsRepository,
+    private readonly prisma: PrismaService, // внедряем PrismaService
+  ) {}
   async getAllBoards(userId: string) {
     return this.boardsRepository.findAll(userId, 'asc'); // сортировка по position
   }
@@ -44,11 +49,28 @@ export class BoardsService {
     return board;
   }
 
-  async createBoard(title: string, description: string, userId: string) {
-    return this.boardsRepository.create({
-      title,
-      description,
-      userId,
+  async createBoard(boardData: CreateBoardDto, userId: string) {
+    // Проверяем, есть ли доска с таким же названием у пользователя
+    const existing = await this.prisma.board.findFirst({
+      where: {
+        title: boardData.title,
+        userId: userId,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException(`Board with title "${boardData.title}" already exists.`);
+    }
+
+    const nextPosition = await getNextPosition(this.prisma, 'board', { userId });
+
+    return this.prisma.board.create({
+      data: {
+        title: boardData.title,
+        description: boardData.description,
+        userId,
+        position: nextPosition,
+      },
     });
   }
 
