@@ -71,16 +71,14 @@ export class BoardsRepository {
     });
   }
 
-  async create(boardData: CreateBoardDto & { position?: number }) {
-    const nextPosition = await getNextPosition(this.prisma, 'board', {
-      userId: boardData.userId,
-    });
+  async create(boardData: CreateBoardDto, userId: string) {
+    const nextPosition = await getNextPosition(this.prisma, 'board', { userId });
 
     return this.prisma.board.create({
       data: {
         title: boardData.title,
         description: boardData.description,
-        userId: boardData.userId,
+        userId, // передаём отдельно, а не из boardData
         position: nextPosition,
       },
     });
