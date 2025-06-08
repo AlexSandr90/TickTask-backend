@@ -4,7 +4,7 @@ import { IsNumber, IsOptional, IsString } from 'class-validator';
 export class UpdateBoardDto {
   @ApiProperty({
     description: 'Board name',
-    example: 'New Board',
+    example: 'Updated Board title',
   })
   @IsOptional()
   @IsString()
@@ -12,7 +12,7 @@ export class UpdateBoardDto {
 
   @ApiProperty({
     description: 'Board description',
-    example: 'New Board description',
+    example: 'Updated Board description',
   })
   @IsOptional()
   @IsString()
