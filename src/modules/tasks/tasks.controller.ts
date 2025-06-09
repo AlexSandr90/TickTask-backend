@@ -98,15 +98,13 @@ export class TasksController {
     status: 200,
     description: 'The user updated task for column iD',
   })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid task ID or missing param',
-  )
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid task ID or missing param')
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
   async updateTask(@Param('id') id: string, @Body() body: UpdateTaskDto) {
-    return this.tasksService.updateTask(id, body.title, body.description);
+    return this.tasksService.updateTask(id, body.title, body.description, body.position);
   }
 
   @Delete(':id')

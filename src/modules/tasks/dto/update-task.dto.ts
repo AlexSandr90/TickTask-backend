@@ -1,8 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsInt, Min } from 'class-validator';
 
 export class UpdateTaskDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Task title',
     example: 'Just do it',
   })
@@ -10,11 +10,20 @@ export class UpdateTaskDto {
   @IsString()
   title?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Task description',
     example: 'Task description',
   })
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({
+    description: 'Task position index (used for ordering)',
+    example: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  position?: number;
 }

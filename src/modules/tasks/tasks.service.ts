@@ -17,9 +17,16 @@ export class TasksService {
     return this.tasksRepository.create({ title, description, columnId });
   }
 
-  async updateTask(id: string, title?: string, description?: string) {
-    return this.tasksRepository.update(id, { title, description });
+  async updateTask(id: string, title?: string, description?: string, position?: number) {
+    const data: any = {};
+
+    if (title !== undefined) data.title = title;
+    if (description !== undefined) data.description = description;
+    if (position !== undefined) data.position = position;
+
+    return this.tasksRepository.update(id, data);
   }
+
 
   async deleteTask(id: string) {
     return this.tasksRepository.delete(id);

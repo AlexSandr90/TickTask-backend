@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { ColumnDto } from './dto/column.dto';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { getNextPosition } from '../../common/utils/position.util';
+import { UpdateColumnDto } from './dto/update-column.dto';
 
 @Injectable()
 export class ColumnsRepository {
@@ -78,11 +78,10 @@ export class ColumnsRepository {
     });
   }
 
-  async update(id: string, data: ColumnDto, position: 'asc' | 'desc' = 'asc') {
+  async update(id: string, data: UpdateColumnDto) {
     return this.prisma.column.update({
       where: { id },
       data,
-      include: { tasks: { orderBy: { position } } },
     });
   }
 

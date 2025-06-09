@@ -32,13 +32,9 @@ export class ColumnsService {
   async updateColumn(
     id: string,
     title?: string,
-    position: 'asc' | 'desc' = 'asc',
+    position?: number,
   ) {
-    const updatedColumn = await this.columnRepository.update(
-      id,
-      { title },
-      position,
-    );
+    const updatedColumn = await this.columnRepository.update(id, { title, position });
     return updatedColumn;
   }
 
