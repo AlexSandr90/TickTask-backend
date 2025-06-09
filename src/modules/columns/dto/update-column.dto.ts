@@ -1,14 +1,14 @@
 import { ColumnDto } from './column.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
+import {  IsInt, IsOptional, Min } from 'class-validator';
 
 export class UpdateColumnDto extends ColumnDto {
   @ApiPropertyOptional({
-    description: 'Sort order for tasks in column',
-    enum: ['asc', 'desc'],
-    example: 'asc',
+    description: 'Position index of the column (used for reordering)',
+    example: 2,
   })
   @IsOptional()
-  @IsIn(['asc', 'desc'])
-  position: 'asc' | 'desc';
+  @IsInt()
+  @Min(0)
+  position?: number;
 }
