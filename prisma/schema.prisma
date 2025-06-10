@@ -48,6 +48,8 @@ model Column {
   position  Int      @default(0)
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   tasks     Task[]
+
+  @@unique([boardId, position])
 }
 
 model Task {
@@ -59,4 +61,6 @@ model Task {
   updatedAt   DateTime @updatedAt
   position    Int      @default(0)
   column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  @@unique([columnId, position])
 }

@@ -33,8 +33,23 @@ export class TasksRepository {
     });
   }
 
-  async update(id: string, data: UpdateTaskDto) {
-    return this.prisma.task.update({ where: { id }, data });
+  async update(
+    id: string,
+    data: { position?: number; columnId?: string },
+  ) {
+    return this.prisma.task.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async updateManyPositions(
+    updates: { id: string; position: number; columnId: string }[],
+  ) {
+    const updatePromises = updates.map(({ id, position, columnId }) =>
+      this.update(id, { position, columnId }),
+    );
+    return Promise.all(updatePromises);
   }
 
   async delete(id: string) {
