@@ -22,6 +22,7 @@ import { ColumnDto } from './dto/column.dto';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
 import { UpdateColumnDto } from './dto/update-column.dto';
+import { UpdateColumnPositionsDto } from './dto/update-columns-positions.dto';
 
 @Controller('columns')
 export class ColumnsController {
@@ -85,6 +86,28 @@ export class ColumnsController {
     return this.columnsService.createColumn(body.title, body.boardId);
   }
 
+  @Put('positions')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Change column by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user changed 1 column by ID for the current board',
+  })
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid board ID or missing param',
+  )
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
+  @ApiResponseNotFoundDecorator('Column not found')
+  @ApiResponseInternalServerErrorDecorator()
+  async updateColumnPositions(
+    @Body() body: UpdateColumnPositionsDto,
+  ) {
+    return this.columnsService.updateColumnPositions(body.updates);
+  }
+
+
+
   @Put(':id')
   @JwtAuthDecorator()
   @ApiOperation({ summary: 'Change column by ID' })
@@ -102,6 +125,8 @@ export class ColumnsController {
   async updateColumn(@Param('id') id: string, @Body() body: UpdateColumnDto) {
     return this.columnsService.updateColumn(id, body.title, body.position);
   }
+
+
 
   @Delete(':id')
   @JwtAuthDecorator()

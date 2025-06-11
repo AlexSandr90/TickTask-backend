@@ -21,6 +21,7 @@ import {
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
+import { UpdateTaskPositionsDto } from './dto/update-task-positions.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -91,6 +92,21 @@ export class TasksController {
     );
   }
 
+  @Put('positions')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Update positions of multiple tasks' })
+  @ApiResponse({ status: 200, description: 'Tasks positions updated' })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async updateManyPositions(
+    @Body() updateTaskPositionsDto: UpdateTaskPositionsDto,
+  ) {
+    return this.tasksService.updateTaskPositions(updateTaskPositionsDto.tasks);
+  }
+
   @Put(':id')
   @JwtAuthDecorator()
   @ApiOperation({ summary: 'Update task for Column ID' })
@@ -98,13 +114,21 @@ export class TasksController {
     status: 200,
     description: 'The user updated task for column iD',
   })
-  @ApiResponseBadRequestDecorator('Bad Request – Invalid task ID or missing param')
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid task ID or missing param',
+  )
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
   async updateTask(@Param('id') id: string, @Body() body: UpdateTaskDto) {
-    return this.tasksService.updateTask(id, body.title, body.description, body.position);
+    return this.tasksService.updateTask(
+      id,
+      body.title,
+      body.description,
+      body.position,
+      body.columnId,
+    );
   }
 
   @Delete(':id')

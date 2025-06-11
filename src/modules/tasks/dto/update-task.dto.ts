@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsInt, Min } from 'class-validator';
 
 export class UpdateTaskDto {
@@ -26,4 +26,12 @@ export class UpdateTaskDto {
   @IsInt()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional({
+    description: 'Column ID',
+    example: '663a3fa5f7cfc3d98dcbfdba',
+  })
+  @IsOptional()
+  @IsString()
+  columnId?: string;
 }
