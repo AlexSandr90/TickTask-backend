@@ -103,7 +103,7 @@ export class ColumnsController {
   async updateColumnPositions(
     @Body() body: UpdateColumnPositionsDto,
   ) {
-    return this.columnsService.updateColumnPositions(body.updates);
+    return this.columnsService.updateColumnPositions(body.boardId, body.updates);
   }
 
 

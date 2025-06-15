@@ -40,33 +40,27 @@ export class ColumnsService {
 
   async updateColumnPositions(
     boardId: string,
-    updates: { id: string; newIndex: number }[]
+    updates: { id: string; position: number }[]
   ) {
+    // Получим все колонки, чтобы проверить существование и права
     const columns = await this.prisma.column.findMany({
       where: { boardId },
-      orderBy: { position: 'asc' },
+      select: { id: true },
     });
 
-    const newOrder = [...columns];
+    const existingIds = new Set(columns.map((col) => col.id));
 
-    for (const { id, newIndex } of updates) {
-      const currentIndex = newOrder.findIndex((col) => col.id === id);
-      if (currentIndex === -1) continue;
-
-      const [moved] = newOrder.splice(currentIndex, 1);
-      newOrder.splice(newIndex, 0, moved);
-    }
-
-    const transactions = newOrder.map((col, idx) =>
-      this.prisma.column.update({
-        where: { id: col.id },
-        data: { position: idx + 1 },
-      })
-    );
+    const transactions = updates
+      .filter(({ id }) => existingIds.has(id)) // отфильтруем несуществующие
+      .map(({ id, position }) =>
+        this.prisma.column.update({
+          where: { id },
+          data: { position },
+        })
+      );
 
     return this.prisma.$transaction(transactions);
   }
-
   async deleteColumn(id: string) {
     return this.columnRepository.delete(id);
   }
