@@ -38,13 +38,31 @@ export class ColumnsService {
     return updatedColumn;
   }
 
-  async updateColumnPositions(updates: { id: string; position: number }[]) {
-    const transactions = updates.map(({ id, position }) => {
-      return this.prisma.column.update({
-        where: { id },
-        data: { position },
-      });
+  async updateColumnPositions(
+    boardId: string,
+    updates: { id: string; newIndex: number }[]
+  ) {
+    const columns = await this.prisma.column.findMany({
+      where: { boardId },
+      orderBy: { position: 'asc' },
     });
+
+    const newOrder = [...columns];
+
+    for (const { id, newIndex } of updates) {
+      const currentIndex = newOrder.findIndex((col) => col.id === id);
+      if (currentIndex === -1) continue;
+
+      const [moved] = newOrder.splice(currentIndex, 1);
+      newOrder.splice(newIndex, 0, moved);
+    }
+
+    const transactions = newOrder.map((col, idx) =>
+      this.prisma.column.update({
+        where: { id: col.id },
+        data: { position: idx + 1 },
+      })
+    );
 
     return this.prisma.$transaction(transactions);
   }
