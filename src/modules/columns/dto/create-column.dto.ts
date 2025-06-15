@@ -21,6 +21,6 @@ export class CreateColumnDto {
     example: 0,
   })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   position?: number;
 }

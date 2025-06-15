@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, ValidateNested, IsString, IsInt, Min } from 'class-validator';
+import { IsArray, ValidateNested, IsString,  Min, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ColumnPositionUpdateDto {
@@ -7,8 +7,8 @@ export class ColumnPositionUpdateDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ example: 2 })
-  @IsInt()
+  @ApiProperty({ example: 2.5 }) // пример дробного значения
+  @IsNumber()
   @Min(0)
   position: number;
 }
