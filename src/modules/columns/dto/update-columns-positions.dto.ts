@@ -13,7 +13,7 @@ export class ColumnPositionUpdateDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ example: 2.5 }) // допускаем дробное значение позиции
+  @ApiProperty({ example: 2.5 }) // дробная позиция
   @IsNumber()
   @Min(0)
   position: number;

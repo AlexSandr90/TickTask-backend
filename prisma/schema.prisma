@@ -57,6 +57,6 @@ model Task {
   columnId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  position    Int      @default(0)
+  position    Float    @default(0)
   column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
 }

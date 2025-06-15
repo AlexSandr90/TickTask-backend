@@ -50,14 +50,15 @@ export class ColumnsService {
     const existingIds = new Set(columns.map(col => col.id));
     const filteredUpdates = updates.filter(({ id }) => existingIds.has(id));
 
-    return this.prisma.$transaction(async (prisma) => {
-      for (const { id, position } of filteredUpdates) {
-        await prisma.column.update({
-          where: { id },
-          data: { position },
-        });
-      }
-      return true;
+    return this.prisma.$transaction((prisma) => {
+      return Promise.all(
+        filteredUpdates.map(({ id, position }) =>
+          prisma.column.update({
+            where: { id },
+            data: { position },
+          }),
+        ),
+      ).then(() => true);
     });
   }
   async deleteColumn(id: string) {
