@@ -28,6 +28,14 @@ export class ColumnsService {
 
     return this.columnRepository.create({ title, boardId });
   }
+  async updateColumn(
+    id: string,
+    title?: string,
+    position?: number,
+  ) {
+    const updatedColumn = await this.columnRepository.update(id, { title, position });
+    return updatedColumn;
+  }
 
   async updateColumnPositions(
     boardId: string,
