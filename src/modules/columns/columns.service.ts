@@ -29,15 +29,6 @@ export class ColumnsService {
     return this.columnRepository.create({ title, boardId });
   }
 
-  async updateColumn(
-    id: string,
-    title?: string,
-    position?: number,
-  ) {
-    const updatedColumn = await this.columnRepository.update(id, { title, position });
-    return updatedColumn;
-  }
-
   async updateColumnPositions(
     boardId: string,
     updates: { id: string; position: number }[],
@@ -50,16 +41,14 @@ export class ColumnsService {
     const existingIds = new Set(columns.map(col => col.id));
     const filteredUpdates = updates.filter(({ id }) => existingIds.has(id));
 
-    return this.prisma.$transaction((prisma) => {
-      return Promise.all(
-        filteredUpdates.map(({ id, position }) =>
-          prisma.column.update({
-            where: { id },
-            data: { position },
-          }),
-        ),
-      ).then(() => true);
-    });
+    return this.prisma.$transaction(
+      filteredUpdates.map(({ id, position }) =>
+        this.prisma.column.update({
+          where: { id },
+          data: { position },
+        }),
+      )
+    );
   }
   async deleteColumn(id: string) {
     return this.columnRepository.delete(id);
