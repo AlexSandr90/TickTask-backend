@@ -272,6 +272,7 @@ export class UsersController {
   }
 
   @Put('avatar')
+  @AuthProtectedDecorator()
   @UseInterceptors(FileInterceptor('file'))
   async replaceAvatar(
     @UploadedFile() file: Express.Multer.File,
@@ -284,6 +285,7 @@ export class UsersController {
   }
 
   @Delete('avatar')
+  @AuthProtectedDecorator()
   async resetAvatar(@Request() req: any) {
     await this.usersService.resetToDefaultAvatar(req.user.id);
 
