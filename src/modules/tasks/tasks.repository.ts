@@ -6,7 +6,7 @@ import { getNextPosition } from '../../common/utils/position.util';
 
 @Injectable()
 export class TasksRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
@@ -33,10 +33,7 @@ export class TasksRepository {
     });
   }
 
-  async update(
-    id: string,
-    data: { position?: number; columnId?: string },
-  ) {
+  async update(id: string, data: { position?: number; columnId?: string }) {
     return this.prisma.task.update({
       where: { id },
       data,
@@ -54,5 +51,19 @@ export class TasksRepository {
 
   async delete(id: string) {
     return this.prisma.task.delete({ where: { id } });
+  }
+
+  async searchTasks(
+    columnId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
+    return this.prisma.task.findMany({
+      where: {
+        columnId,
+        title: { contains: query, mode: 'insensitive' },
+      },
+      orderBy: { position },
+    });
   }
 }
