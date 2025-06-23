@@ -25,7 +25,7 @@ import { UpdateTaskPositionsDto } from './dto/update-task-positions.dto';
 
 @Controller('tasks')
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(private readonly tasksService: TasksService) { }
 
   @Get()
   @JwtAuthDecorator()
@@ -50,6 +50,41 @@ export class TasksController {
     }
 
     return this.tasksService.getAllTasks(columnId, position ?? 'asc');
+  }
+
+  @Get('search')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Find tasks for Column ID and Task Title' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tasks was founded for column ID and Task Title',
+  })
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid task ID or missing param',
+  )
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async searchTasks(
+    @Query('columnId') columnId: string,
+    @Query('query') query: string,
+    @Query('position') position: 'asc' | 'desc' = 'asc',
+  ) {
+    console.log('Controller searchTasks called with:', {
+      columnId,
+      query,
+      position,
+    });
+
+    const result = await this.tasksService.searchTasks(
+      columnId,
+      query,
+      position,
+    );
+    console.log('Controller result:', result);
+
+    return result;
   }
 
   @Get(':id')

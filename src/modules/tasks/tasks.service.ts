@@ -3,7 +3,7 @@ import { TasksRepository } from './tasks.repository';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly tasksRepository: TasksRepository) {}
+  constructor(private readonly tasksRepository: TasksRepository) { }
 
   async getAllTasks(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.tasksRepository.findAll(columnId, position);
@@ -67,10 +67,13 @@ export class TasksService {
         .filter((t) => t.id !== id)
         .map((t) => ({ id: t.id, position: 0, columnId: oldColumnId }));
 
-
       reordered.splice(position, 0, { id, position, columnId: oldColumnId });
 
-      const final = reordered.map((t, i) => ({ id: t.id, position: i, columnId: oldColumnId }));
+      const final = reordered.map((t, i) => ({
+        id: t.id,
+        position: i,
+        columnId: oldColumnId,
+      }));
       await this.tasksRepository.updateManyPositions(final);
     }
 
@@ -80,14 +83,21 @@ export class TasksService {
     tasks: { id: string; columnId: string; position: number }[],
   ) {
     // Группируем задачи по колонкам
-    const groupedByColumn: Record<string, { id: string; position: number; columnId: string }[]> = {};
+    const groupedByColumn: Record<
+      string,
+      { id: string; position: number; columnId: string }[]
+    > = {};
 
     for (const task of tasks) {
       if (!groupedByColumn[task.columnId]) {
         groupedByColumn[task.columnId] = [];
       }
       // Передаем columnId, чтобы обновить его вместе с позицией
-      groupedByColumn[task.columnId].push({ id: task.id, position: task.position, columnId: task.columnId });
+      groupedByColumn[task.columnId].push({
+        id: task.id,
+        position: task.position,
+        columnId: task.columnId,
+      });
     }
 
     // Пересортируем задачи внутри каждой колонки по позиции
@@ -103,6 +113,13 @@ export class TasksService {
     return { success: true };
   }
 
+  async searchTasks(
+    columnId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
+    return this.tasksRepository.searchTasks(columnId, query, position);
+  }
 
   async deleteTask(id: string) {
     return this.tasksRepository.delete(id);
