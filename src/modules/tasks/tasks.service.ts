@@ -79,14 +79,10 @@ export class TasksService {
 
     return this.tasksRepository.update(id, updates);
   }
-  async updateTaskPositions(
-    tasks: { id: string; columnId: string; position: number }[],
-  ) {
+  async updateTaskPositions(tasks: { id: string; columnId: string; position: number }[]) {
     // Группируем задачи по колонкам
-    const groupedByColumn: Record<
-      string,
-      { id: string; position: number; columnId: string }[]
-    > = {};
+    const groupedByColumn: Record<string, { id: string; position: number; columnId: string }[]> =
+      {};
 
     for (const task of tasks) {
       if (!groupedByColumn[task.columnId]) {
@@ -113,12 +109,12 @@ export class TasksService {
     return { success: true };
   }
 
-  async searchTasks(
-    columnId: string,
-    query: string,
-    position: 'asc' | 'desc' = 'asc',
-  ) {
+  async searchTasks(columnId: string, query: string, position: 'asc' | 'desc' = 'asc') {
     return this.tasksRepository.searchTasks(columnId, query, position);
+  }
+
+  async searchTasksInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+    return this.tasksRepository.searchTasksInBoard(boardId, query, position);
   }
 
   async deleteTask(id: string) {

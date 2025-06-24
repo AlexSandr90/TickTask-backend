@@ -40,9 +40,7 @@ export class TasksRepository {
     });
   }
 
-  async updateManyPositions(
-    updates: { id: string; position: number; columnId: string }[],
-  ) {
+  async updateManyPositions(updates: { id: string; position: number; columnId: string }[]) {
     const updatePromises = updates.map(({ id, position, columnId }) =>
       this.update(id, { position, columnId }),
     );
@@ -53,11 +51,7 @@ export class TasksRepository {
     return this.prisma.task.delete({ where: { id } });
   }
 
-  async searchTasks(
-    columnId: string,
-    query: string,
-    position: 'asc' | 'desc' = 'asc',
-  ) {
+  async searchTasks(columnId: string, query: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
       where: {
         columnId,
@@ -65,5 +59,18 @@ export class TasksRepository {
       },
       orderBy: { position },
     });
+  }
+
+  async searchTasksInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+    const result = await this.prisma.task.findMany({
+      where: {
+        column: { boardId },
+        title: { contains: query, mode: 'insensitive' },
+      },
+      include: { column: true },
+      orderBy: { position },
+    });
+
+    return result;
   }
 }

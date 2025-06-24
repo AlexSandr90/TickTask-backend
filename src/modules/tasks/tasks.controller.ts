@@ -20,7 +20,7 @@ import {
 } from '../../common/decorators/swagger';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
+import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
 import { UpdateTaskPositionsDto } from './dto/update-task-positions.dto';
 
 @Controller('tasks')
@@ -50,41 +50,6 @@ export class TasksController {
     }
 
     return this.tasksService.getAllTasks(columnId, position ?? 'asc');
-  }
-
-  @Get('search')
-  @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Find tasks for Column ID and Task Title' })
-  @ApiResponse({
-    status: 200,
-    description: 'Tasks was founded for column ID and Task Title',
-  })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid task ID or missing param',
-  )
-  @ApiResponseUnauthorizedDecorator()
-  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
-  @ApiResponseNotFoundDecorator()
-  @ApiResponseInternalServerErrorDecorator()
-  async searchTasks(
-    @Query('columnId') columnId: string,
-    @Query('query') query: string,
-    @Query('position') position: 'asc' | 'desc' = 'asc',
-  ) {
-    console.log('Controller searchTasks called with:', {
-      columnId,
-      query,
-      position,
-    });
-
-    const result = await this.tasksService.searchTasks(
-      columnId,
-      query,
-      position,
-    );
-    console.log('Controller result:', result);
-
-    return result;
   }
 
   @Get(':id')
@@ -125,21 +90,6 @@ export class TasksController {
       body.description,
       body.columnId,
     );
-  }
-
-  @Put('positions')
-  @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Update positions of multiple tasks' })
-  @ApiResponse({ status: 200, description: 'Tasks positions updated' })
-  @ApiResponseBadRequestDecorator()
-  @ApiResponseUnauthorizedDecorator()
-  @ApiResponseForbiddenDecorator()
-  @ApiResponseNotFoundDecorator()
-  @ApiResponseInternalServerErrorDecorator()
-  async updateManyPositions(
-    @Body() updateTaskPositionsDto: UpdateTaskPositionsDto,
-  ) {
-    return this.tasksService.updateTaskPositions(updateTaskPositionsDto.tasks);
   }
 
   @Put(':id')
