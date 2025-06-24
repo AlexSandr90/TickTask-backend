@@ -20,13 +20,13 @@ import {
 } from '../../common/decorators/swagger';
 import { ColumnDto } from './dto/column.dto';
 import { CreateColumnDto } from './dto/create-column.dto';
-import { JwtAuthDecorator } from '../../common/decorators/jwst.auth.decorator';
+import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
 import { UpdateColumnDto } from './dto/update-column.dto';
 import { UpdateColumnPositionsDto } from './dto/update-columns-positions.dto';
 
 @Controller('columns')
 export class ColumnsController {
-  constructor(private readonly columnsService: ColumnsService) {}
+  constructor(private readonly columnsService: ColumnsService) { }
 
   @Get()
   @JwtAuthDecorator()
