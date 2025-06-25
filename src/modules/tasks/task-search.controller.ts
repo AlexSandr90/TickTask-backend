@@ -36,11 +36,40 @@ export class TaskSearchController {
 
     @Get('board')
     @JwtAuthDecorator()
+    @ApiOperation({ summary: 'Find tasks for Board ID and Task Title' })
+    @ApiResponse({
+        status: 200,
+        description: 'Tasks were found for board ID and Task Title',
+    })
+    @ApiResponseBadRequestDecorator('Bad Request – Invalid task ID or missing param')
+    @ApiResponseUnauthorizedDecorator()
+    @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
+    @ApiResponseNotFoundDecorator()
+    @ApiResponseInternalServerErrorDecorator()
     async searchTasksInBoard(
         @Query('boardId') boardId: string,
         @Query('query') query: string,
         @Query('position') position: 'asc' | 'desc' = 'asc',
     ) {
         return this.tasksService.searchTasksInBoard(boardId, query, position);
+    }
+
+    @Get('user')
+    @JwtAuthDecorator()
+    @ApiOperation({ summary: 'Find tasks for Task Title' })
+    @ApiResponse({
+        status: 200,
+        description: 'Tasks were found for Task Title',
+    })
+    @ApiResponseBadRequestDecorator('Bad Request – Invalid task ID or missing param')
+    @ApiResponseUnauthorizedDecorator()
+    @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
+    @ApiResponseNotFoundDecorator()
+    @ApiResponseInternalServerErrorDecorator()
+    async searchTasksInUser(
+        @Query('query') query: string,
+        @Query('position') position: 'asc' | 'desc' = 'asc',
+    ) {
+        return this.tasksService.searchTasksInUser(query, position);
     }
 }

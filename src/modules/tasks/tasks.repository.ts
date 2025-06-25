@@ -73,4 +73,14 @@ export class TasksRepository {
 
     return result;
   }
+
+  async searchTasksInUser(query: string, position: 'asc' | 'desc' = 'asc') {
+    return await this.prisma.task.findMany({
+      where: {
+        title: { contains: query, mode: 'insensitive' },
+      },
+      include: { column: true },
+      orderBy: { position },
+    });
+  }
 }

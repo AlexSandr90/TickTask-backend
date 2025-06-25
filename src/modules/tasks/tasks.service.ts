@@ -117,6 +117,10 @@ export class TasksService {
     return this.tasksRepository.searchTasksInBoard(boardId, query, position);
   }
 
+  async searchTasksInUser(query: string, position: 'asc' | 'desc' = 'asc') {
+    return this.tasksRepository.searchTasksInUser(query, position);
+  }
+
   async deleteTask(id: string) {
     return this.tasksRepository.delete(id);
   }
