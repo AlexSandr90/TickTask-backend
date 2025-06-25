@@ -7,7 +7,7 @@ export class ColumnsService {
   constructor(
     private readonly columnRepository: ColumnsRepository,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async getAllColumns(boardId: string) {
     return this.columnRepository.findAll(boardId);
@@ -28,25 +28,18 @@ export class ColumnsService {
 
     return this.columnRepository.create({ title, boardId });
   }
-  async updateColumn(
-    id: string,
-    title?: string,
-    position?: number,
-  ) {
+  async updateColumn(id: string, title?: string, position?: number) {
     const updatedColumn = await this.columnRepository.update(id, { title, position });
     return updatedColumn;
   }
 
-  async updateColumnPositions(
-    boardId: string,
-    updates: { id: string; position: number }[],
-  ) {
+  async updateColumnPositions(boardId: string, updates: { id: string; position: number }[]) {
     const columns = await this.prisma.column.findMany({
       where: { boardId },
       select: { id: true },
     });
 
-    const existingIds = new Set(columns.map(col => col.id));
+    const existingIds = new Set(columns.map((col) => col.id));
     const filteredUpdates = updates.filter(({ id }) => existingIds.has(id));
 
     return this.prisma.$transaction(
@@ -55,9 +48,18 @@ export class ColumnsService {
           where: { id },
           data: { position },
         }),
-      )
+      ),
     );
   }
+
+  async searchColumnsInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+    return this.columnRepository.searchColumnsInBoard(boardId, query, position);
+  }
+
+  async searchColumnsInUser(query: string, position: 'asc' | 'desc' = 'asc') {
+    return this.columnRepository.searchColumnsInUser(query, position);
+  }
+
   async deleteColumn(id: string) {
     return this.columnRepository.delete(id);
   }
