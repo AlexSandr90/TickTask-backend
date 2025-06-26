@@ -6,7 +6,7 @@ import { UpdateColumnDto } from './dto/update-column.dto';
 
 @Injectable()
 export class ColumnsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(boardId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.column.findMany({
@@ -87,5 +87,26 @@ export class ColumnsRepository {
 
   async delete(id: string) {
     return this.prisma.column.delete({ where: { id } });
+  }
+
+  async searchColumnsInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+    return await this.prisma.column.findMany({
+      where: {
+        boardId,
+        title: { contains: query, mode: 'insensitive' },
+      },
+      include: { board: true },
+      orderBy: { position },
+    });
+  }
+
+  async searchColumnsInUser(query: string, position: 'asc' | 'desc' = 'asc') {
+    return await this.prisma.column.findMany({
+      where: {
+        title: { contains: query, mode: 'insensitive' },
+      },
+      include: { board: true },
+      orderBy: { position },
+    });
   }
 }
