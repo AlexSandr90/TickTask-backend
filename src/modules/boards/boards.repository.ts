@@ -6,7 +6,7 @@ import { getNextPosition } from '../../common/utils/position.util';
 
 @Injectable()
 export class BoardsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.board.findMany({
@@ -53,11 +53,7 @@ export class BoardsRepository {
     });
   }
 
-  async findOneByUserAndIdWithColumns(
-    id: string,
-    userId: string,
-    position: 'asc' | 'desc',
-  ) {
+  async findOneByUserAndIdWithColumns(id: string, userId: string, position: 'asc' | 'desc') {
     return this.prisma.board.findFirst({
       where: { id, userId },
       include: {
@@ -90,6 +86,16 @@ export class BoardsRepository {
 
   async delete(id: string) {
     return this.prisma.board.delete({ where: { id } });
+  }
+
+  async searchBoards(query: string, position: 'asc' | 'desc' = 'asc') {
+    return await this.prisma.board.findMany({
+      where: {
+        title: { contains: query, mode: 'insensitive' },
+      },
+      include: { columns: true },
+      orderBy: { position },
+    });
   }
 
   async findLastBoardByUser(userId: string) {
