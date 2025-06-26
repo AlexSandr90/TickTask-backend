@@ -1,12 +1,4 @@
-import {
-  Get,
-  Put,
-  Body,
-  Post,
-  Param,
-  Delete,
-  Controller,
-} from '@nestjs/common';
+import { Get, Put, Body, Post, Param, Delete, Controller, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { BoardsService } from './boards.service';
 import {
@@ -40,15 +32,33 @@ export class BoardsController {
   })
   @ApiGetAllBoardsResponses()
   @ApiResponse({ status: 200, description: 'The User get all boards' })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid board ID or missing param',
-  )
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid board ID or missing param')
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Boards not found')
   @ApiResponseInternalServerErrorDecorator()
   async getAllBoards(@CurrentUserDecorator() user) {
     return this.boardsService.getAllBoards(user.id);
+  }
+
+  @Get('search')
+  @JwtAuthDecorator()
+  @ApiOperation({
+    summary: 'Search boards for Board title',
+    description: 'Retrieve all boards for Board title',
+  })
+  @ApiGetAllBoardsResponses()
+  @ApiResponse({ status: 200, description: 'The User get all boards' })
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid board title or missing param')
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
+  @ApiResponseNotFoundDecorator('Boards not found')
+  @ApiResponseInternalServerErrorDecorator()
+  async searchBoards(
+    @Query('query') query: string,
+    @Query('position') position: 'asc' | 'desc' = 'asc',
+  ) {
+    return this.boardsService.searchBoards(query, position);
   }
 
   @Get(':id')
@@ -59,9 +69,7 @@ export class BoardsController {
   })
   @ApiGetBoardByIdResponses()
   @ApiResponse({ status: 200, description: 'The User get Board for User ID' })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid board ID or missing param',
-  )
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid board ID or missing param')
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
@@ -78,17 +86,12 @@ export class BoardsController {
   })
   @ApiCreateBoardResponses()
   @ApiResponse({ status: 201, description: 'The User create new Board' })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid board ID or missing param',
-  )
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid board ID or missing param')
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
   @ApiResponseInternalServerErrorDecorator()
-  async createBoard(
-    @Body() body: CreateBoardDto,
-    @CurrentUserDecorator() user,
-  ) {
+  async createBoard(@Body() body: CreateBoardDto, @CurrentUserDecorator() user) {
     return this.boardsService.createBoard(body, user.id);
   }
 
@@ -100,9 +103,7 @@ export class BoardsController {
     description: 'The User update Board for User ID',
   })
   @ApiUpdateBoardResponses()
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid board ID or missing param',
-  )
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid board ID or missing param')
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')
@@ -112,12 +113,7 @@ export class BoardsController {
     @Body() body: UpdateBoardDto,
     @CurrentUserDecorator() user,
   ) {
-    return this.boardsService.updateBoard(
-      id,
-      user.id,
-      body.title,
-      body.description,
-    );
+    return this.boardsService.updateBoard(id, user.id, body.title, body.description);
   }
 
   @Delete(':id')
@@ -128,9 +124,7 @@ export class BoardsController {
   })
   @ApiDeleteBoardResponses()
   @ApiResponse({ status: 200, description: 'The User delete Board' })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid board ID or missing param',
-  )
+  @ApiResponseBadRequestDecorator('Bad Request – Invalid board ID or missing param')
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Board not found')

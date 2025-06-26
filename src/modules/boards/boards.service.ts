@@ -9,7 +9,7 @@ export class BoardsService {
   constructor(
     private readonly boardsRepository: BoardsRepository,
     private readonly prisma: PrismaService, // внедряем PrismaService
-  ) {}
+  ) { }
   async getAllBoards(userId: string) {
     return this.boardsRepository.findAll(userId, 'asc'); // сортировка по position
   }
@@ -24,23 +24,12 @@ export class BoardsService {
     return board;
   }
 
-  async getAllBoardsWithColumns(
-    userId: string,
-    position: 'asc' | 'desc' = 'asc',
-  ) {
+  async getAllBoardsWithColumns(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.boardsRepository.findAllWithColumns(userId, position);
   }
 
-  async findBoardByIdWithColumns(
-    id: string,
-    userId: string,
-    position: 'asc' | 'desc' = 'asc',
-  ) {
-    const board = await this.boardsRepository.findOneByUserAndIdWithColumns(
-      id,
-      userId,
-      position,
-    );
+  async findBoardByIdWithColumns(id: string, userId: string, position: 'asc' | 'desc' = 'asc') {
+    const board = await this.boardsRepository.findOneByUserAndIdWithColumns(id, userId, position);
 
     if (!board) {
       throw new NotFoundException('Board not found');
@@ -74,12 +63,7 @@ export class BoardsService {
     });
   }
 
-  async updateBoard(
-    id: string,
-    userId: string,
-    title?: string,
-    description?: string,
-  ) {
+  async updateBoard(id: string, userId: string, title?: string, description?: string) {
     const board = await this.boardsRepository.findOneByUserAndId(id, userId);
 
     if (!board) {
@@ -97,5 +81,9 @@ export class BoardsService {
     }
 
     return this.boardsRepository.delete(id);
+  }
+
+  async searchBoards(query: string, position: 'asc' | 'desc' = 'asc') {
+    return this.boardsRepository.searchBoards(query, position);
   }
 }
