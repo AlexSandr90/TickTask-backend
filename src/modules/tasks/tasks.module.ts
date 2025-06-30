@@ -8,12 +8,8 @@ import { TasksPositionsController } from './tasks-positions.controller';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [
-    TasksController,
-    TaskSearchController,
-    TasksPositionsController,
-  ],
+  controllers: [TasksPositionsController, TasksController, TaskSearchController],
   providers: [TasksService, TasksRepository],
   exports: [TasksService],
 })
-export class TasksModule { }
+export class TasksModule {}
