@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import * as jwt from 'jsonwebtoken';
 import { AUTH_CONFIG } from '../src/configurations/auth.config';
