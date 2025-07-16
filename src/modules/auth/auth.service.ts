@@ -15,6 +15,7 @@ import { APP_CONFIG } from '../../configurations/app.config';
 import { sendPasswordResetEmail } from '../../email/email.service';
 import { UsersRepository } from '../users/users.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { UserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -24,38 +25,10 @@ export class AuthService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async register(
-    username: string,
-    email: string,
-    password: string,
-    confirmPassword: string,
-    timezone?: string,
-  ): Promise<UserWithoutPassword> {
-    if (password !== confirmPassword) {
-      throw new UnauthorizedException('Passwords not match!');
-    }
+  async register(userDto: UserDto): Promise<UserWithoutPassword> {
+    await this.validateBusinessRules(userDto);
 
-    const finalTimezone = timezone ?? 'UTC';
-
-    if (finalTimezone !== 'UTC' && !this.usersRepository.isValidTimezone(finalTimezone)) {
-      throw new BadRequestException('Timezone not valid');
-    }
-
-    const existUser = await this.usersRepository.findByEmail(email);
-
-    if (existUser) {
-      throw new UnauthorizedException('A user with this email already exists.');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.usersRepository.createUser({
-      username,
-      email,
-      passwordHash: hashedPassword,
-      timezone: finalTimezone,
-    });
-    const { passwordHash, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+    return this.createUser(userDto);
   }
 
   async generateTokens(user: User) {
@@ -232,5 +205,41 @@ export class AuthService {
     await this.usersRepository.updatePassword(user.id, hashedPassword);
 
     return { message: 'Password has been set successfully' };
+  }
+
+  private async validateBusinessRules(userDTO: UserDto): Promise<void> {
+    this.validateTimezone(userDTO.timezone);
+
+    await this.validateEmailUnique(userDTO.email);
+  }
+
+  private validateTimezone(timezone?: string): void {
+    if (!timezone) return;
+
+    if (timezone !== 'UTC' && !this.usersRepository.isValidTimezone(timezone)) {
+      throw new BadRequestException('Timezone not valid');
+    }
+  }
+
+  private async validateEmailUnique(email: string): Promise<void> {
+    const existUser = await this.usersRepository.findByEmail(email);
+
+    if (existUser) {
+      throw new BadRequestException('A user with this email already exists.');
+    }
+  }
+
+  private async createUser(userDto: UserDto): Promise<UserWithoutPassword> {
+    const hashedPassword = await bcrypt.hash(userDto.password, 10);
+
+    const newUser = await this.usersRepository.createUser({
+      username: userDto.username,
+      email: userDto.email,
+      passwordHash: hashedPassword,
+      timezone: userDto.timezone ?? 'UTC',
+    });
+
+    const { passwordHash, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
   }
 }
