@@ -23,6 +23,7 @@ export class MatchConstraint implements ValidatorConstraintInterface {
     return `${args.property} must match the field ${args.constraints[0]}`;
   }
 }
+
 export function Match(property: string, validationOptions?: ValidationOptions) {
   return function (object: any, propertyName: string) {
     registerDecorator({
