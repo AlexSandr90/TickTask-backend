@@ -6,7 +6,7 @@ import { getNextPosition } from '../../common/utils/position.util';
 
 @Injectable()
 export class BoardsRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.board.findMany({
@@ -53,7 +53,11 @@ export class BoardsRepository {
     });
   }
 
-  async findOneByUserAndIdWithColumns(id: string, userId: string, position: 'asc' | 'desc') {
+  async findOneByUserAndIdWithColumns(
+    id: string,
+    userId: string,
+    position: 'asc' | 'desc',
+  ) {
     return this.prisma.board.findFirst({
       where: { id, userId },
       include: {
@@ -68,7 +72,9 @@ export class BoardsRepository {
   }
 
   async create(boardData: CreateBoardDto, userId: string) {
-    const nextPosition = await getNextPosition(this.prisma, 'board', { userId });
+    const nextPosition = await getNextPosition(this.prisma, 'board', {
+      userId,
+    });
 
     return this.prisma.board.create({
       data: {

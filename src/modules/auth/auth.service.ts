@@ -1,21 +1,22 @@
 import {
-  BadRequestException,
+  Response,
   HttpStatus,
   Injectable,
-  Response,
+  BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
-import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { randomBytes } from 'crypto';
-import { APP_CONFIG } from '../../configurations/app.config';
 import { sendPasswordResetEmail } from '../../email/email.service';
 import { UsersRepository } from '../users/users.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { UserDto } from './dto/create-user.dto';
+import { UserBusinessValidator } from '../users/utils/business.validator';
+import { APP_CONFIG } from '../../configurations/app.config';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 
 @Injectable()
 export class AuthService {
@@ -23,12 +24,12 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly userBusinessValidator: UserBusinessValidator,
   ) {}
 
   async register(userDto: UserDto): Promise<UserWithoutPassword> {
-    await this.validateBusinessRules(userDto);
-
-    return this.createUser(userDto);
+    await this.userBusinessValidator.validateBusinessRules(userDto);
+    return this.userBusinessValidator.createUser(userDto);
   }
 
   async generateTokens(user: User) {
@@ -51,40 +52,13 @@ export class AuthService {
     password: string,
     @Response() res: any,
   ): Promise<void> {
-    const user = await this.usersRepository.findByEmail(email);
-
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Incorrect email or password!');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Incorrect email or password!');
-    }
-
+    const user = await this.userBusinessValidator.validateUserCredentials(
+      email,
+      password,
+    );
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
-    const isProduction = process.env.NODE_ENV === 'production';
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
-      maxAge: AUTH_CONFIG.expireJwt,
-      path: '/',
-      sameSite: isProduction ? 'None' : 'Lax', // в проде None, иначе Lax
-      domain: isProduction ? 'taskcraft.click' : undefined, // локально domain не нужен
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      maxAge: AUTH_CONFIG.expireJwtRefresh,
-      path: '/',
-      sameSite: isProduction ? 'None' : 'Lax',
-      domain: isProduction ? 'taskcraft.click' : undefined,
-    });
-
+    this.userBusinessValidator.setAuthCookies(res, accessToken, refreshToken);
     res.status(HttpStatus.OK).json({ message: 'Successfully logged in' });
     return;
   }
@@ -205,41 +179,5 @@ export class AuthService {
     await this.usersRepository.updatePassword(user.id, hashedPassword);
 
     return { message: 'Password has been set successfully' };
-  }
-
-  private async validateBusinessRules(userDTO: UserDto): Promise<void> {
-    this.validateTimezone(userDTO.timezone);
-
-    await this.validateEmailUnique(userDTO.email);
-  }
-
-  private validateTimezone(timezone?: string): void {
-    if (!timezone) return;
-
-    if (timezone !== 'UTC' && !this.usersRepository.isValidTimezone(timezone)) {
-      throw new BadRequestException('Timezone not valid');
-    }
-  }
-
-  private async validateEmailUnique(email: string): Promise<void> {
-    const existUser = await this.usersRepository.findByEmail(email);
-
-    if (existUser) {
-      throw new BadRequestException('A user with this email already exists.');
-    }
-  }
-
-  private async createUser(userDto: UserDto): Promise<UserWithoutPassword> {
-    const hashedPassword = await bcrypt.hash(userDto.password, 10);
-
-    const newUser = await this.usersRepository.createUser({
-      username: userDto.username,
-      email: userDto.email,
-      passwordHash: hashedPassword,
-      timezone: userDto.timezone ?? 'UTC',
-    });
-
-    const { passwordHash, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
   }
 }
