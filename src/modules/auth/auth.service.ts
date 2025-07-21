@@ -78,25 +78,11 @@ export class AuthService {
       const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
         await this.generateTokens(user);
 
-      const isProduction = process.env.NODE_ENV === 'production';
-
-      res.cookie('access_token', newAccessToken, {
-        httpOnly: true,
-        secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
-        maxAge: AUTH_CONFIG.expireJwt,
-        path: '/',
-        sameSite: isProduction ? 'None' : 'Lax', // None требует secure
-        domain: isProduction ? 'taskcraft.click' : undefined, // домен не нужен на localhost
-      });
-
-      res.cookie('refresh_token', newRefreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        maxAge: AUTH_CONFIG.expireJwtRefresh,
-        path: '/',
-        sameSite: isProduction ? 'None' : 'Lax',
-        domain: isProduction ? 'taskcraft.click' : undefined,
-      });
+      this.userBusinessValidator.setAuthCookies(
+        res,
+        newAccessToken,
+        newRefreshToken,
+      );
 
       return res.json({ access_token: newAccessToken });
     } catch (e) {
@@ -161,19 +147,8 @@ export class AuthService {
     userId: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    const user = await this.usersRepository.findById(userId);
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    if (!user.googleId) {
-      throw new BadRequestException('Only Google users can use this method');
-    }
-
-    if (user.passwordHash) {
-      throw new BadRequestException('Password is already set');
-    }
+    const user = await this.userBusinessValidator.findGoogleUserById(userId);
+    await this.userBusinessValidator.ensurePasswordNotSet(user);
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.usersRepository.updatePassword(user.id, hashedPassword);

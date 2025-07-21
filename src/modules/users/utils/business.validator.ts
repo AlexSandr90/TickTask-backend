@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { AUTH_CONFIG } from '../../../configurations/auth.config';
 import { User } from '@prisma/client';
 import { Response } from 'express';
+
 // import { Response } from '@nestjs/common';
 
 @Injectable()
@@ -75,6 +76,26 @@ export class UserBusinessValidator {
       sameSite: isProduction ? 'none' : 'lax',
       domain: isProduction ? 'taskcraft.click' : undefined,
     });
+  }
+
+  async findGoogleUserById(userId: string): Promise<User> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.googleId) {
+      throw new BadRequestException('Only Google users can use this method');
+    }
+
+    return user;
+  }
+
+  async ensurePasswordNotSet(user: { passwordHash?: string | null }) {
+    if (user.passwordHash) {
+      throw new BadRequestException('Password is already set');
+    }
   }
 
   private validateTimezone(timezone?: string): void {
