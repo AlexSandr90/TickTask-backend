@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
 import { getNextPosition } from '../../common/utils/position.util';
 
 @Injectable()
 export class TasksRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
@@ -28,19 +27,31 @@ export class TasksRepository {
         title: taskData.title,
         description: taskData.description,
         position: nextPosition,
+        priority: taskData.priority,
+        tags: taskData.tags,
         column: { connect: { id: taskData.columnId } },
       },
     });
   }
 
-  async update(id: string, data: { position?: number; columnId?: string }) {
+  async update(
+    id: string,
+    data: {
+      position?: number;
+      columnId?: string;
+      priority?: number;
+      tags?: string[];
+    },
+  ) {
     return this.prisma.task.update({
       where: { id },
       data,
     });
   }
 
-  async updateManyPositions(updates: { id: string; position: number; columnId: string }[]) {
+  async updateManyPositions(
+    updates: { id: string; position: number; columnId: string }[],
+  ) {
     const updatePromises = updates.map(({ id, position, columnId }) =>
       this.update(id, { position, columnId }),
     );
@@ -51,7 +62,11 @@ export class TasksRepository {
     return this.prisma.task.delete({ where: { id } });
   }
 
-  async searchTasks(columnId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+  async searchTasks(
+    columnId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
     return this.prisma.task.findMany({
       where: {
         columnId,
@@ -61,8 +76,12 @@ export class TasksRepository {
     });
   }
 
-  async searchTasksInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
-    const result = await this.prisma.task.findMany({
+  async searchTasksInBoard(
+    boardId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
+    return this.prisma.task.findMany({
       where: {
         column: { boardId },
         title: { contains: query, mode: 'insensitive' },
@@ -70,12 +89,10 @@ export class TasksRepository {
       include: { column: true },
       orderBy: { position },
     });
-
-    return result;
   }
 
   async searchTasksInUser(query: string, position: 'asc' | 'desc' = 'asc') {
-    return await this.prisma.task.findMany({
+    return this.prisma.task.findMany({
       where: {
         title: { contains: query, mode: 'insensitive' },
       },
