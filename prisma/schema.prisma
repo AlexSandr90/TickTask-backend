@@ -58,5 +58,7 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   position    Float    @default(0)
+  priority    Int      @default(1)
+  tags        String[]
   column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
 }
