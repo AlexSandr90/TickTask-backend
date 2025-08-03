@@ -34,4 +34,12 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsString()
   columnId?: string;
+  @ApiPropertyOptional({
+    description: 'User ID assigned to the task',
+    example: '663a1234abcde9876fgh1234',
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
 }

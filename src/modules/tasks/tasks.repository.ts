@@ -10,18 +10,23 @@ export class TasksRepository {
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
       where: { columnId },
+      include: { user: true },
       orderBy: { position },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.task.findUnique({ where: { id } });
+    return this.prisma.task.findUnique({
+      where: { id },
+      include: { user: true },
+    });
   }
 
   async create(taskData: CreateTaskDto & { position?: number }) {
     const nextPosition = await getNextPosition(this.prisma, 'task', {
       columnId: taskData.columnId,
     });
+
     return this.prisma.task.create({
       data: {
         title: taskData.title,
@@ -29,8 +34,10 @@ export class TasksRepository {
         position: nextPosition,
         priority: taskData.priority,
         tags: taskData.tags,
-        column: { connect: { id: taskData.columnId } },
+        userId: taskData.userId ?? null,
+        columnId: taskData.columnId,
       },
+      include: { user: true },
     });
   }
 
@@ -41,11 +48,15 @@ export class TasksRepository {
       columnId?: string;
       priority?: number;
       tags?: string[];
+      userId?: string;
+      title?: string;
+      description?: string;
     },
   ) {
     return this.prisma.task.update({
       where: { id },
       data,
+      include: { user: true },
     });
   }
 
@@ -72,6 +83,7 @@ export class TasksRepository {
         columnId,
         title: { contains: query, mode: 'insensitive' },
       },
+      include: { user: true },
       orderBy: { position },
     });
   }
@@ -86,7 +98,7 @@ export class TasksRepository {
         column: { boardId },
         title: { contains: query, mode: 'insensitive' },
       },
-      include: { column: true },
+      include: { column: true, user: true },
       orderBy: { position },
     });
   }
@@ -96,7 +108,7 @@ export class TasksRepository {
       where: {
         title: { contains: query, mode: 'insensitive' },
       },
-      include: { column: true },
+      include: { column: true, user: true },
       orderBy: { position },
     });
   }
