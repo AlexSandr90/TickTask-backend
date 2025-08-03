@@ -19,6 +19,7 @@ export class TasksService {
     columnId: string,
     priority: number = 1,
     tags: string[] = [],
+    userId?: string,
   ) {
     return this.tasksRepository.create({
       title,
@@ -26,6 +27,7 @@ export class TasksService {
       columnId,
       priority,
       tags,
+      userId,
     });
   }
 
@@ -35,6 +37,7 @@ export class TasksService {
     description?: string,
     position?: number,
     columnId?: string,
+    userId?: string,
   ) {
     const task = await this.tasksRepository.findOne(id);
     if (!task) throw new Error('Task not found');
@@ -42,7 +45,7 @@ export class TasksService {
     const updates: any = {};
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
-
+    if (userId !== undefined) updates.userId = userId; // 👈 добавили
     const oldColumnId = task.columnId;
     const newColumnId = columnId ?? oldColumnId;
 

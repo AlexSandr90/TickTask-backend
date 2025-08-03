@@ -40,4 +40,13 @@ export class CreateTaskDto {
   @IsArray()
   @IsString({ each: true })
   tags: string[];
+  @ApiProperty({
+    description: 'User ID',
+    example: '663a3fa5f7cfc3d98dcbfdb0',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
 }
