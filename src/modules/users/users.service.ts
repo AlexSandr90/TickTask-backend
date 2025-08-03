@@ -378,4 +378,15 @@ export class UsersService {
   getCurrentTimeInUserTimezone(userTimezone: string): string {
     return dayjs().tz(userTimezone).format();
   }
+  async getAllUsers() {
+    const users = await this.usersRepository.findAll();
+
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      avatarUrl: user.avatarPath
+        ? this.supabaseService.getAvatarUrl(user.avatarPath)
+        : this.supabaseService.getAvatarUrl(DEFAULT_AVATAR_PATH),
+    }));
+  }
 }

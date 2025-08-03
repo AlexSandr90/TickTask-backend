@@ -386,4 +386,9 @@ export class UsersController {
     }
     return user;
   }
+  @Get()
+  @AuthProtectedDecorator() // если нужен доступ только для авторизованных
+  async getAllUsers() {
+    return this.usersService.getAllUsers();
+  }
 }
