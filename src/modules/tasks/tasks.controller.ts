@@ -21,6 +21,7 @@ import {
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
+import { CurrentUserDecorator } from '../../common/decorators/current-user.decorator';
 
 @Controller('tasks')
 export class TasksController {
@@ -83,13 +84,17 @@ export class TasksController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
-  async createTask(@Body() body: CreateTaskDto) {
+  async createTask(
+    @Body() body: CreateTaskDto,
+    @CurrentUserDecorator() user: { id: string },
+  ) {
     return this.tasksService.createTask(
       body.title,
       body.description,
       body.columnId,
       body.priority,
       body.tags,
+      user.id, // передаём userId в сервис
     );
   }
 
@@ -107,13 +112,18 @@ export class TasksController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
-  async updateTask(@Param('id') id: string, @Body() body: UpdateTaskDto) {
+  async updateTask(
+    @Param('id') id: string,
+    @Body() body: UpdateTaskDto,
+    @CurrentUserDecorator() user: { id: string },
+  ) {
     return this.tasksService.updateTask(
       id,
       body.title,
       body.description,
       body.position,
       body.columnId,
+      user.id, // если нужна проверка userId
     );
   }
 
