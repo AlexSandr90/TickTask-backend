@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import { UsersRepository } from './users.repository';
 import { AuthModule } from '../auth/auth.module';
+import { UserBusinessValidator } from './utils/business.validator';
 
 @Module({
   imports: [
@@ -31,7 +32,13 @@ import { AuthModule } from '../auth/auth.module';
     UsersService,
     UsersRepository,
     SupabaseAvatarService,
+    UserBusinessValidator,
   ],
-  exports: [UsersService, UsersRepository, SupabaseAvatarService],
+  exports: [
+    UsersService,
+    UsersRepository,
+    SupabaseAvatarService,
+    UserBusinessValidator,
+  ],
 })
 export class UsersModule {}

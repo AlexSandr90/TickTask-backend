@@ -1,20 +1,22 @@
 import {
-  BadRequestException,
+  Response,
   HttpStatus,
   Injectable,
-  Response,
+  BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
-import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { randomBytes } from 'crypto';
-import { APP_CONFIG } from '../../configurations/app.config';
 import { sendPasswordResetEmail } from '../../email/email.service';
 import { UsersRepository } from '../users/users.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { UserDto } from './dto/create-user.dto';
+import { UserBusinessValidator } from '../users/utils/business.validator';
+import { APP_CONFIG } from '../../configurations/app.config';
+import { AUTH_CONFIG } from '../../configurations/auth.config';
 
 @Injectable()
 export class AuthService {
@@ -22,40 +24,12 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly userBusinessValidator: UserBusinessValidator,
   ) {}
 
-  async register(
-    username: string,
-    email: string,
-    password: string,
-    confirmPassword: string,
-    timezone?: string,
-  ): Promise<UserWithoutPassword> {
-    if (password !== confirmPassword) {
-      throw new UnauthorizedException('Passwords not match!');
-    }
-
-    const finalTimezone = timezone ?? 'UTC';
-
-    if (finalTimezone !== 'UTC' && !this.usersRepository.isValidTimezone(finalTimezone)) {
-      throw new BadRequestException('Timezone not valid');
-    }
-
-    const existUser = await this.usersRepository.findByEmail(email);
-
-    if (existUser) {
-      throw new UnauthorizedException('A user with this email already exists.');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.usersRepository.createUser({
-      username,
-      email,
-      passwordHash: hashedPassword,
-      timezone: finalTimezone,
-    });
-    const { passwordHash, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+  async register(userDto: UserDto): Promise<UserWithoutPassword> {
+    await this.userBusinessValidator.validateBusinessRules(userDto);
+    return this.userBusinessValidator.createUser(userDto);
   }
 
   async generateTokens(user: User) {
@@ -78,40 +52,13 @@ export class AuthService {
     password: string,
     @Response() res: any,
   ): Promise<void> {
-    const user = await this.usersRepository.findByEmail(email);
-
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Incorrect email or password!');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Incorrect email or password!');
-    }
-
+    const user = await this.userBusinessValidator.validateUserCredentials(
+      email,
+      password,
+    );
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
-    const isProduction = process.env.NODE_ENV === 'production';
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
-      maxAge: AUTH_CONFIG.expireJwt,
-      path: '/',
-      sameSite: isProduction ? 'None' : 'Lax', // в проде None, иначе Lax
-      domain: isProduction ? 'taskcraft.click' : undefined, // локально domain не нужен
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      maxAge: AUTH_CONFIG.expireJwtRefresh,
-      path: '/',
-      sameSite: isProduction ? 'None' : 'Lax',
-      domain: isProduction ? 'taskcraft.click' : undefined,
-    });
-
+    this.userBusinessValidator.setAuthCookies(res, accessToken, refreshToken);
     res.status(HttpStatus.OK).json({ message: 'Successfully logged in' });
     return;
   }
@@ -131,25 +78,11 @@ export class AuthService {
       const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
         await this.generateTokens(user);
 
-      const isProduction = process.env.NODE_ENV === 'production';
-
-      res.cookie('access_token', newAccessToken, {
-        httpOnly: true,
-        secure: isProduction, // secure: true только в проде (нужно для SameSite=None)
-        maxAge: AUTH_CONFIG.expireJwt,
-        path: '/',
-        sameSite: isProduction ? 'None' : 'Lax', // None требует secure
-        domain: isProduction ? 'taskcraft.click' : undefined, // домен не нужен на localhost
-      });
-
-      res.cookie('refresh_token', newRefreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        maxAge: AUTH_CONFIG.expireJwtRefresh,
-        path: '/',
-        sameSite: isProduction ? 'None' : 'Lax',
-        domain: isProduction ? 'taskcraft.click' : undefined,
-      });
+      this.userBusinessValidator.setAuthCookies(
+        res,
+        newAccessToken,
+        newRefreshToken,
+      );
 
       return res.json({ access_token: newAccessToken });
     } catch (e) {
@@ -214,19 +147,8 @@ export class AuthService {
     userId: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    const user = await this.usersRepository.findById(userId);
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    if (!user.googleId) {
-      throw new BadRequestException('Only Google users can use this method');
-    }
-
-    if (user.passwordHash) {
-      throw new BadRequestException('Password is already set');
-    }
+    const user = await this.userBusinessValidator.findGoogleUserById(userId);
+    await this.userBusinessValidator.ensurePasswordNotSet(user);
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.usersRepository.updatePassword(user.id, hashedPassword);

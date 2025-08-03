@@ -1,31 +1,30 @@
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
   Get,
-  Param,
-  Post,
   Put,
+  Body,
+  Post,
+  Param,
   Query,
+  Delete,
+  Controller,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import {
-  ApiResponseBadRequestDecorator,
-  ApiResponseForbiddenDecorator,
-  ApiResponseInternalServerErrorDecorator,
   ApiResponseNotFoundDecorator,
+  ApiResponseForbiddenDecorator,
+  ApiResponseBadRequestDecorator,
   ApiResponseUnauthorizedDecorator,
+  ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
-import { UpdateTaskPositionsDto } from './dto/update-task-positions.dto';
 
 @Controller('tasks')
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) { }
+  constructor(private readonly tasksService: TasksService) {}
 
   @Get()
   @JwtAuthDecorator()
@@ -89,6 +88,8 @@ export class TasksController {
       body.title,
       body.description,
       body.columnId,
+      body.priority,
+      body.tags,
     );
   }
 

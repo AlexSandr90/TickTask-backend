@@ -3,7 +3,7 @@ import { TasksRepository } from './tasks.repository';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly tasksRepository: TasksRepository) { }
+  constructor(private readonly tasksRepository: TasksRepository) {}
 
   async getAllTasks(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.tasksRepository.findAll(columnId, position);
@@ -13,8 +13,20 @@ export class TasksService {
     return this.tasksRepository.findOne(id);
   }
 
-  async createTask(title: string, description: string, columnId: string) {
-    return this.tasksRepository.create({ title, description, columnId });
+  async createTask(
+    title: string,
+    description: string,
+    columnId: string,
+    priority: number = 1,
+    tags: string[] = [],
+  ) {
+    return this.tasksRepository.create({
+      title,
+      description,
+      columnId,
+      priority,
+      tags,
+    });
   }
 
   async updateTask(
@@ -79,10 +91,15 @@ export class TasksService {
 
     return this.tasksRepository.update(id, updates);
   }
-  async updateTaskPositions(tasks: { id: string; columnId: string; position: number }[]) {
+
+  async updateTaskPositions(
+    tasks: { id: string; columnId: string; position: number }[],
+  ) {
     // Группируем задачи по колонкам
-    const groupedByColumn: Record<string, { id: string; position: number; columnId: string }[]> =
-      {};
+    const groupedByColumn: Record<
+      string,
+      { id: string; position: number; columnId: string }[]
+    > = {};
 
     for (const task of tasks) {
       if (!groupedByColumn[task.columnId]) {
@@ -109,11 +126,19 @@ export class TasksService {
     return { success: true };
   }
 
-  async searchTasks(columnId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+  async searchTasks(
+    columnId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
     return this.tasksRepository.searchTasks(columnId, query, position);
   }
 
-  async searchTasksInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+  async searchTasksInBoard(
+    boardId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
     return this.tasksRepository.searchTasksInBoard(boardId, query, position);
   }
 
