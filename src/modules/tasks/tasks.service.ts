@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TasksRepository } from './tasks.repository';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -38,20 +39,25 @@ export class TasksService {
     position?: number,
     columnId?: string,
     userId?: string,
+    priority?: number,
+    tags?: string[],
   ) {
     const task = await this.tasksRepository.findOne(id);
     if (!task) throw new Error('Task not found');
 
-    const updates: any = {};
+    const updates: Partial<UpdateTaskDto> = {};
+
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
-    if (userId !== undefined) updates.userId = userId; // 👈 добавили
+    if (userId !== undefined) updates.userId = userId;
+    if (priority !== undefined) updates.priority = priority;
+    if (tags !== undefined) updates.tags = tags;
+
     const oldColumnId = task.columnId;
     const newColumnId = columnId ?? oldColumnId;
 
     // Обновляем позицию и колонку, если колонка изменилась
     if (columnId && columnId !== oldColumnId) {
-      // Пересчитываем позиции в старой колонке
       const oldTasks = await this.tasksRepository.findAll(oldColumnId, 'asc');
       const updatedOld = oldTasks
         .filter((t) => t.id !== id)

@@ -123,7 +123,9 @@ export class TasksController {
       body.description,
       body.position,
       body.columnId,
-      user.id, // если нужна проверка userId
+      user.id,
+      body.priority,
+      body.tags,
     );
   }
 
