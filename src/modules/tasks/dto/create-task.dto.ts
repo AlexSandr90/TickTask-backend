@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateTaskDto {
@@ -23,14 +23,14 @@ export class CreateTaskDto {
   @IsNotEmpty()
   columnId: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Task priority',
     example: 1,
   })
   @IsNotEmpty()
   priority: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Array of task TAGS',
     example: ['tag1', 'tag2', 'tag3'],
     type: [String],
@@ -40,6 +40,7 @@ export class CreateTaskDto {
   @IsArray()
   @IsString({ each: true })
   tags: string[];
+
   @ApiProperty({
     description: 'User ID',
     example: '663a3fa5f7cfc3d98dcbfdb0',
@@ -48,5 +49,4 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   userId?: string;
-
 }

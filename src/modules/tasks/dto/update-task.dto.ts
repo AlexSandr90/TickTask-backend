@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  Min,
+  IsNotEmpty,
+  IsArray,
+} from 'class-validator';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({
@@ -34,6 +41,25 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsString()
   columnId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Task priority',
+    example: 1,
+  })
+  @IsNotEmpty()
+  priority: number;
+
+  @ApiPropertyOptional({
+    description: 'Array of task TAGS',
+    example: ['tag1', 'tag2', 'tag3'],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags: string[];
+
   @ApiPropertyOptional({
     description: 'User ID assigned to the task',
     example: '663a1234abcde9876fgh1234',
@@ -41,5 +67,4 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsString()
   userId?: string;
-
 }
