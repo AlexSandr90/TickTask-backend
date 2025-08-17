@@ -57,6 +57,7 @@ model Task {
   description String?
   columnId    String
   userId      String?
+  deadline    DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   position    Float    @default(0)
