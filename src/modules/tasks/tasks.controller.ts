@@ -126,6 +126,7 @@ export class TasksController {
       user.id,
       body.priority,
       body.tags,
+      body?.deadline,
     );
   }
 
