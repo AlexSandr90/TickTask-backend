@@ -51,7 +51,7 @@ export class TasksRepository {
       userId?: string;
       title?: string;
       description?: string;
-      deadline?: Date;
+      deadline?: Date | null;
     },
   ) {
     return this.prisma.task.update({

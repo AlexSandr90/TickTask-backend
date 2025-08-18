@@ -41,18 +41,19 @@ export class TasksService {
     userId?: string,
     priority?: number,
     tags?: string[],
-    deadline?: Date | undefined,
+    deadline?: Date | null,
   ) {
     const task = await this.tasksRepository.findOne(id);
     if (!task) throw new Error('Task not found');
 
-    const updates: Partial<UpdateTaskDto> = {};
+    const updates: Partial<UpdateTaskDto> & { deadline?: Date | null } = {};
 
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
     if (userId !== undefined) updates.userId = userId;
     if (priority !== undefined) updates.priority = priority;
     if (tags !== undefined) updates.tags = tags;
+    if (deadline !== undefined) updates.deadline = deadline;
 
     const oldColumnId = task.columnId;
     const newColumnId = columnId ?? oldColumnId;
