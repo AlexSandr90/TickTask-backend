@@ -41,6 +41,7 @@ export class TasksService {
     userId?: string,
     priority?: number,
     tags?: string[],
+    deadline?: Date | undefined,
   ) {
     const task = await this.tasksRepository.findOne(id);
     if (!task) throw new Error('Task not found');
