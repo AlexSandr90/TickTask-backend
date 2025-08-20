@@ -305,11 +305,7 @@ export class UsersService {
   }
 
   getAvailableTimezones(): string[] {
-    try {
-      return Intl.supportedValuesOf('timeZone');
-    } catch (e) {
-      return this.getFallbackTimezones();
-    }
+    return this.getFallbackTimezones();
   }
 
   private getFallbackTimezones(): string[] {
@@ -322,12 +318,23 @@ export class UsersService {
       'Europe/Rome',
       'Europe/Madrid',
       'Europe/Kyiv',
-      'Europe/Moscow',
       'Europe/Istanbul',
       'Europe/Amsterdam',
       'Europe/Vienna',
       'Europe/Warsaw',
       'Europe/Prague',
+      'Europe/Stockholm',
+      'Europe/Helsinki',
+      'Europe/Oslo',
+      'Europe/Copenhagen',
+      'Europe/Brussels',
+      'Europe/Zurich',
+      'Europe/Dublin',
+      'Europe/Lisbon',
+      'Europe/Budapest',
+      'Europe/Bucharest',
+      'Europe/Sofia',
+      'Europe/Athens',
 
       // America
       'America/New_York',
@@ -355,6 +362,10 @@ export class UsersService {
       'Asia/Manila',
       'Asia/Karachi',
       'Asia/Tehran',
+      'Asia/Almaty',
+      'Asia/Tashkent',
+      'Asia/Baku',
+      'Asia/Tbilisi',
 
       // Australia & Oceania
       'Australia/Sydney',
@@ -378,6 +389,7 @@ export class UsersService {
   getCurrentTimeInUserTimezone(userTimezone: string): string {
     return dayjs().tz(userTimezone).format();
   }
+
   async getAllUsers() {
     const users = await this.usersRepository.findAll();
 

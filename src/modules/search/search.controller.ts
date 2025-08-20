@@ -1,20 +1,7 @@
-import {
-  Get,
-  Put,
-  Post,
-  Body,
-  Param,
-  Query,
-  Delete,
-  Controller,
-  Request,
-  BadRequestException,
-} from '@nestjs/common';
+import { Post, Body, Request, Controller } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SearchService } from './search.service';
 import {
-  ApiResponseNotFoundDecorator,
-  ApiResponseForbiddenDecorator,
   ApiResponseBadRequestDecorator,
   ApiResponseUnauthorizedDecorator,
   ApiResponseInternalServerErrorDecorator,
