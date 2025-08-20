@@ -174,6 +174,7 @@ export class UsersRepository {
       return false;
     }
   }
+
   async findAll(): Promise<{ id: string; username: string; avatarPath: string | null }[]> {
     return this.prisma.user.findMany({
       select: {
