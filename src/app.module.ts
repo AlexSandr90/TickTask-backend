@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { BoardsModule } from './modules/boards/boards.module';
 import { ColumnsModule } from './modules/columns/columns.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     BoardsModule,
     ColumnsModule,
     TasksModule,
+    SearchModule,
   ],
   controllers: [],
   providers: [],
