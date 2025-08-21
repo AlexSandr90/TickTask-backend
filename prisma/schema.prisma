@@ -12,6 +12,8 @@ model User {
   id                 String    @id @default(uuid())
   username           String
   email              String    @unique
+  pendingEmail       String?
+  emailChangeToken   String?
   passwordHash       String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -52,17 +54,17 @@ model Column {
 }
 
 model Task {
-  id          String   @id @unique @default(uuid())
+  id          String    @id @unique @default(uuid())
   title       String
   description String?
   columnId    String
   userId      String?
   deadline    DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  position    Float    @default(0)
-  priority    Int      @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  position    Float     @default(0)
+  priority    Int       @default(1)
   tags        String[]
-  column      Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

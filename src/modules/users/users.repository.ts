@@ -3,6 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { use } from 'passport';
 
 dayjs.extend(timezone);
 
@@ -141,6 +142,59 @@ export class UsersRepository {
     return this.updateUserById(userId, { passwordResetToken: resetToken });
   }
 
+  async updateEmailChangeRequest(
+    userId: string,
+    pendingEmail: string,
+    emailChangeToken: string,
+  ): Promise<User> {
+    return this.updateUserById(userId, {
+      pendingEmail,
+      emailChangeToken,
+      isActive: false,
+    });
+  }
+
+  async confirmEmailChange(token: string): Promise<User | null> {
+    console.log(
+      '🔍 Searching for user with emailChangeToken:',
+      token.substring(0, 20) + '...',
+    );
+
+    const user = await this.prisma.user.findFirst({
+      where: { emailChangeToken: token },
+    });
+
+    console.log(
+      '🔍 Found user:',
+      user
+        ? `ID: ${user.id}, email: ${user.email}, pendingEmail: ${user.pendingEmail}`
+        : 'null',
+    );
+
+    if (!user || !user.pendingEmail) {
+      console.log('❌ User not found or no pendingEmail');
+      throw null;
+    }
+    console.log('✅ Updating user email...');
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: user.pendingEmail,
+        pendingEmail: null,
+        emailChangeToken: null,
+        isActive: true,
+      },
+    });
+  }
+
+  async cancelEmailChange(userId: string): Promise<User> {
+    return this.updateUserById(userId, {
+      pendingEmail: null,
+      emailChangeToken: null,
+      isActive: true,
+    });
+  }
+
   // --------- AVATAR ---------
 
   async updateAvatarPath(userId: string, avatarPath: string) {
@@ -175,7 +229,9 @@ export class UsersRepository {
     }
   }
 
-  async findAll(): Promise<{ id: string; username: string; avatarPath: string | null }[]> {
+  async findAll(): Promise<
+    { id: string; username: string; avatarPath: string | null }[]
+  > {
     return this.prisma.user.findMany({
       select: {
         id: true,
