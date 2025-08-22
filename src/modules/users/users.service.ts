@@ -232,13 +232,13 @@ export class UsersService {
     }
 
     const emailChangeToken = generateJwtToken(newEmail, userId);
-    console.log('📧 Generated emailChangeToken:', emailChangeToken);
+
     await this.usersRepository.updateEmailChangeRequest(
       userId,
       newEmail,
       emailChangeToken,
     );
-    console.log('✅ User updated with pending email and token');
+
     const baseUrl = APP_CONFIG.baseUrl || 'http://localhost:3000';
     const magicLink = `${baseUrl}/confirm-email-change/${emailChangeToken}`;
 
@@ -259,17 +259,13 @@ export class UsersService {
       throw new BadRequestException('Token not provided');
     }
 
-    console.log('Looking for user with token:', token.substring(0, 20) + '...');
     const user = await this.usersRepository.confirmEmailChange(token);
-    console.log('Found user:', user ? 'YES' : 'NO');
+
     if (!user) {
       throw new NotFoundException(
         'Invalid token or email change request not found',
       );
     }
-
-    console.log('User pendingEmail:', user.pendingEmail);
-    console.log('User isActive:', user.isActive);
 
     const result = await this.generateTokensAndSetCookies(user, res);
 

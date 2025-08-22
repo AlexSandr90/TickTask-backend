@@ -155,27 +155,14 @@ export class UsersRepository {
   }
 
   async confirmEmailChange(token: string): Promise<User | null> {
-    console.log(
-      '🔍 Searching for user with emailChangeToken:',
-      token.substring(0, 20) + '...',
-    );
-
     const user = await this.prisma.user.findFirst({
       where: { emailChangeToken: token },
     });
 
-    console.log(
-      '🔍 Found user:',
-      user
-        ? `ID: ${user.id}, email: ${user.email}, pendingEmail: ${user.pendingEmail}`
-        : 'null',
-    );
-
     if (!user || !user.pendingEmail) {
-      console.log('❌ User not found or no pendingEmail');
       throw null;
     }
-    console.log('✅ Updating user email...');
+
     return this.prisma.user.update({
       where: { id: user.id },
       data: {

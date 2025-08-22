@@ -28,6 +28,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         id: user.id,
         username: user.username,
         email: user.email,
+        isActive: user.isActive,
+        pendingEmail: user.pendingEmail,
       };
     } catch (error) {
       console.error('JWT validation error ', error);
