@@ -1,10 +1,10 @@
 import { Response } from 'express';
 import {
-  BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
+  BadRequestException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersRepository } from './users.repository';
@@ -16,6 +16,7 @@ import { User } from '@prisma/client';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
+import { APP_CONFIG } from '../../configurations/app.config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../auth/auth.service';
 import dayjs from 'dayjs';
@@ -102,10 +103,14 @@ export class UsersService {
     const user = await this.findByEmail(email);
     if (!user) throw new NotFoundException('User with this email not found');
 
-    const token = generateJwtToken(email, user.id);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const targetEmail = user.pendingEmail || user.email;
 
-    const magikLink = `${baseUrl}/activate/${token}`;
+    const token = generateJwtToken(targetEmail, user.id);
+    const baseUrl = APP_CONFIG.baseUrl || 'http://localhost:3000';
+
+    const endpoint = user.pendingEmail ? 'confirm-email-change' : 'activate';
+
+    const magikLink = `${baseUrl}/${endpoint}/${token}`;
 
     try {
       await sendVerificationEmail(email, 'Your Magic Link', magikLink);
@@ -147,30 +152,12 @@ export class UsersService {
         decoded.email,
       );
 
-      const { accessToken, refreshToken } =
-        await this.authService.generateTokens(updatedUser);
+      const result = await this.generateTokensAndSetCookies(updatedUser, res);
 
-      const isProduction = process.env.NODE_ENV === 'production';
-
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: isProduction,
-        maxAge: Number(AUTH_CONFIG.expireJwt),
-        path: '/',
-        sameSite: isProduction ? 'none' : 'lax',
-        domain: isProduction ? 'taskcraft.click' : undefined,
+      return res.json({
+        message: 'User activated successfully',
+        ...result,
       });
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
-        path: '/',
-        sameSite: isProduction ? 'none' : 'lax',
-        domain: isProduction ? 'taskcraft.click' : undefined,
-      });
-
-      return res.json({ user: updatedUser, accessToken });
     } catch (error) {
       throw new InternalServerErrorException('Failed to activate user');
     }
@@ -229,6 +216,71 @@ export class UsersService {
     await this.usersRepository.updatePassword(userId, passwordHash);
 
     return 'Password updated successfully';
+  }
+
+  async requestEmailChange(userId: string, newEmail: string) {
+    const existingUser = await this.usersRepository.findByEmail(newEmail);
+
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    const user = await this.findOneById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const emailChangeToken = generateJwtToken(newEmail, userId);
+
+    await this.usersRepository.updateEmailChangeRequest(
+      userId,
+      newEmail,
+      emailChangeToken,
+    );
+
+    const baseUrl = APP_CONFIG.baseUrl || 'http://localhost:3000';
+    const magicLink = `${baseUrl}/confirm-email-change/${emailChangeToken}`;
+
+    try {
+      await sendVerificationEmail(newEmail, 'Confirm Email Change', magicLink);
+    } catch (error) {
+      throw new InternalServerErrorException('Error sending email');
+    }
+
+    return {
+      message: 'Email change confirmation sent to new email address',
+      pendingEmail: newEmail,
+    };
+  }
+
+  async confirmEmailChange(token: string, res: Response) {
+    if (!token) {
+      throw new BadRequestException('Token not provided');
+    }
+
+    const user = await this.usersRepository.confirmEmailChange(token);
+
+    if (!user) {
+      throw new NotFoundException(
+        'Invalid token or email change request not found',
+      );
+    }
+
+    const result = await this.generateTokensAndSetCookies(user, res);
+
+    return res.json({
+      message: 'Email changed successfully',
+      ...result,
+    });
+  }
+
+  async cancelEmailChange(userId: string) {
+    const user = await this.usersRepository.cancelEmailChange(userId);
+    return {
+      message: 'Email change cancelled',
+      user: { ...user, passwordHash: undefined, refreshToken: undefined },
+    };
   }
 
   async updatePasswordResetToken(userId: string, newPassword: string) {
@@ -308,6 +360,51 @@ export class UsersService {
     return this.getFallbackTimezones();
   }
 
+  getCurrentTimeInUserTimezone(userTimezone: string): string {
+    return dayjs().tz(userTimezone).format();
+  }
+
+  async getAllUsers() {
+    const users = await this.usersRepository.findAll();
+
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      avatarUrl: user.avatarPath
+        ? this.supabaseService.getAvatarUrl(user.avatarPath)
+        : this.supabaseService.getAvatarUrl(DEFAULT_AVATAR_PATH),
+    }));
+  }
+
+  private async generateTokensAndSetCookies(user: User, res: Response) {
+    const { accessToken, refreshToken } =
+      await this.authService.generateTokens(user);
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      maxAge: Number(AUTH_CONFIG.expireJwt),
+      path: '/',
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: isProduction ? 'taskcraft.click' : undefined,
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
+      path: '/',
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: isProduction ? 'taskcraft.click' : undefined,
+    });
+
+    return {
+      accessToken,
+      user: { ...user, passwordHash: undefined, refreshToken: undefined },
+    };
+  }
+
   private getFallbackTimezones(): string[] {
     return [
       'UTC',
@@ -384,21 +481,5 @@ export class UsersService {
       'Atlantic/Reykjavik',
       'Indian/Mauritius',
     ];
-  }
-
-  getCurrentTimeInUserTimezone(userTimezone: string): string {
-    return dayjs().tz(userTimezone).format();
-  }
-
-  async getAllUsers() {
-    const users = await this.usersRepository.findAll();
-
-    return users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      avatarUrl: user.avatarPath
-        ? this.supabaseService.getAvatarUrl(user.avatarPath)
-        : this.supabaseService.getAvatarUrl(DEFAULT_AVATAR_PATH),
-    }));
   }
 }

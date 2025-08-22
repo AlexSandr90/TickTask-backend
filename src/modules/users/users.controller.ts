@@ -40,6 +40,8 @@ import {
 import { AuthProtectedDecorator } from '../../common/decorators/auth.decorator';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
 import { UpdateUserTimezoneDto } from './dto/update-user-timezone.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
+import { EmailChangeGuard } from '../../guards/email-change-guard';
 
 interface RequestWithUser extends Request {
   user: {
@@ -194,6 +196,64 @@ export class UsersController {
     } catch (error) {
       throw new BadRequestException('Failed to activate user');
     }
+  }
+  // @AuthProtectedDecorator()
+
+  @Delete('cancel-email-change')
+  @UseGuards(JwtAuthGuard, EmailChangeGuard)
+  @ApiOperation({ summary: 'Cancel Email change' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cancel Email change',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async cancelEmailChange(@Request() req) {
+    const userId = req.user.id;
+    return this.usersService.cancelEmailChange(userId);
+  }
+
+  @Post('change-email')
+  @AuthProtectedDecorator()
+  @ApiOperation({ summary: 'Request Email change' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email change confirmation sent',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  async requestEmailChange(
+    @Request() req,
+    @Body() changeEmailDto: ChangeEmailDto,
+  ) {
+    const userId = req.user.id;
+    return this.usersService.requestEmailChange(
+      userId,
+      changeEmailDto.newEmail,
+    );
+  }
+
+  @Get('confirm-email-change/:token')
+  @ApiOperation({ summary: 'Confirm Email change' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email change confirmed successfully',
+  })
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator()
+  @ApiResponseNotFoundDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async confirmEmailChange(
+    @Param('token') token: string,
+    @Res() res: Response,
+  ) {
+    return await this.usersService.confirmEmailChange(token, res);
   }
 
   @Post('send-magic-link')

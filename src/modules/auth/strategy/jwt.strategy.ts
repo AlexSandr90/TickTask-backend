@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
@@ -18,12 +18,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     try {
-      const user = await this.usersService.findOne(payload.email);
+      const user = await this.usersService.findByEmail(payload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
 
       return {
         id: user.id,
         username: user.username,
         email: user.email,
+        isActive: user.isActive,
+        pendingEmail: user.pendingEmail,
       };
     } catch (error) {
       console.error('JWT validation error ', error);
