@@ -10,8 +10,6 @@ export class EmailChangeGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    console.log('EmailChangeGuard user:', user);
-
     // Дозволяємо доступ якщо є запит на зміну email
     if (!user) return false;
 
