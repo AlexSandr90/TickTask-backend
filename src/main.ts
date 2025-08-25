@@ -19,6 +19,7 @@ async function bootstrap() {
       'https://localhost:3000',
       'http://localhost:3000',
       'http://localhost:4200',
+      'https://dea2442ec9a0.ngrok-free.app',
     ],
     methods: 'GET,POST,PUT,DELETE,OPTIONS, PATCH', // Разрешаем только GET, POST, PUT, DELETE методы
     allowedHeaders: 'Content-Type, Authorization', // Разрешаем только заголовки Content-Type и Authorization
