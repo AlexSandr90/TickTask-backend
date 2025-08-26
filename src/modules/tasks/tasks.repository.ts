@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { getNextPosition } from '../../common/utils/position.util';
+import { TaskForCalendarDto } from './dto/calendar-task.dto';
 
 @Injectable()
 export class TasksRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+  }
 
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
@@ -113,4 +115,37 @@ export class TasksRepository {
       orderBy: { position },
     });
   }
+
+
+// tasks.repository.ts
+  async findAllForCalendar(userId: string): Promise<TaskForCalendarDto[]> {
+    const tasks = await this.prisma.task.findMany({
+      where: { userId }, // фильтр по текущему пользователю
+      include: {
+        column: { select: { boardId: true } },
+        user: true,
+      },
+    });
+
+    tasks.sort((a, b) => {
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+      return a.deadline.getTime() - b.deadline.getTime();
+    });
+
+    return tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      description: task.description ?? undefined,
+      deadline: task.deadline ?? undefined,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      priority: task.priority,
+      tags: task.tags,
+      boardId: task.column.boardId,
+      columnId: task.columnId,
+      userId: task.userId ?? undefined,
+    }));
+  }
 }
+
