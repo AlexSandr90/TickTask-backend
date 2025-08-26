@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TasksRepository } from './tasks.repository';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { TaskForCalendarDto } from './dto/calendar-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -159,5 +160,10 @@ export class TasksService {
 
   async deleteTask(id: string) {
     return this.tasksRepository.delete(id);
+  }
+
+  // tasks.service.ts
+  async getAllTasksForCalendar(userId: string): Promise<TaskForCalendarDto[]> {
+    return await this.tasksRepository.findAllForCalendar(userId);
   }
 }

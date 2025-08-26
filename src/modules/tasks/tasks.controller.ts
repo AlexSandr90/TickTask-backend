@@ -1,27 +1,28 @@
 import {
-  Get,
-  Put,
-  Body,
-  Post,
-  Param,
-  Query,
-  Delete,
-  Controller,
   BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import {
-  ApiResponseNotFoundDecorator,
-  ApiResponseForbiddenDecorator,
   ApiResponseBadRequestDecorator,
-  ApiResponseUnauthorizedDecorator,
+  ApiResponseForbiddenDecorator,
   ApiResponseInternalServerErrorDecorator,
+  ApiResponseNotFoundDecorator,
+  ApiResponseUnauthorizedDecorator,
 } from '../../common/decorators/swagger';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
 import { CurrentUserDecorator } from '../../common/decorators/current-user.decorator';
+import { TaskForCalendarDto } from './dto/calendar-task.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -50,6 +51,20 @@ export class TasksController {
     }
 
     return this.tasksService.getAllTasks(columnId, position ?? 'asc');
+  }
+
+  // ВАЖНО: calendar должен быть ПЕРЕД :id
+  @Get('calendar')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Get all tasks for calendar view' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user received all tasks for calendar',
+  })
+  async getTasksForCalendar(
+    @CurrentUserDecorator() user: { id: string },
+  ): Promise<TaskForCalendarDto[]> {
+    return await this.tasksService.getAllTasksForCalendar(user.id);
   }
 
   @Get(':id')
