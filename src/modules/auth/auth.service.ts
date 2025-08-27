@@ -10,7 +10,7 @@ import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
 import { randomBytes } from 'crypto';
-import { sendPasswordResetEmail } from '../../email/email.service';
+import { EmailService } from '../../email/email.service';
 import { UsersRepository } from '../users/users.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { UserDto } from './dto/create-user.dto';
@@ -25,6 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly userBusinessValidator: UserBusinessValidator,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(userDto: UserDto): Promise<UserWithoutPassword> {
@@ -118,7 +119,11 @@ export class AuthService {
 
     await this.usersRepository.updatePasswordResetToken(user.id, resetToken);
 
-    await sendPasswordResetEmail(email, 'Password Reset', resetLink);
+    await this.emailService.sendPasswordResetEmail(
+      email,
+      'Password Reset',
+      resetLink,
+    );
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

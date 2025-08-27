@@ -11,7 +11,7 @@ import { UsersRepository } from './users.repository';
 import { UpdateUserDto } from './dto/user.dto';
 import { generateJwtToken } from '../../common/utils/jwt.util';
 import * as process from 'node:process';
-import { sendVerificationEmail } from '../../email/email.service';
+import { EmailService } from '../../email/email.service';
 import { User } from '@prisma/client';
 import { DEFAULT_AVATAR_PATH } from '../../common/constants';
 import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
@@ -33,6 +33,7 @@ export class UsersService {
     private readonly supabaseService: SupabaseAvatarService,
     private readonly jwtService: JwtService,
     private readonly authService: AuthService, // добавьте сюда
+    private readonly emailService: EmailService,
   ) {}
 
   async findOne(email: string) {
@@ -113,7 +114,11 @@ export class UsersService {
     const magikLink = `${baseUrl}/${endpoint}/${token}`;
 
     try {
-      await sendVerificationEmail(email, 'Your Magic Link', magikLink);
+      await this.emailService.sendVerificationRegistrationEmail(
+        email,
+        'Your Magic Link',
+        magikLink,
+      );
     } catch (error) {
       throw new InternalServerErrorException('Error sending email');
     }
@@ -243,7 +248,11 @@ export class UsersService {
     const magicLink = `${baseUrl}/confirm-email-change/${emailChangeToken}`;
 
     try {
-      await sendVerificationEmail(newEmail, 'Confirm Email Change', magicLink);
+      await this.emailService.sendVerificationChangeEmail(
+        newEmail,
+        'Confirm Email Change',
+        magicLink,
+      );
     } catch (error) {
       throw new InternalServerErrorException('Error sending email');
     }

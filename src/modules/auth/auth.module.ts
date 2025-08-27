@@ -8,6 +8,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
+import { EmailService } from '../../email/email.service';
 
 @Module({
   imports: [
@@ -25,8 +26,9 @@ import { UsersModule } from '../users/users.module';
   controllers: [AuthController],
   providers: [
     AuthService,
-    GoogleStrategy,
+    EmailService,
     PrismaService,
+    GoogleStrategy,
     {
       provide: 'GoogleStrategy',
       useFactory: (prismaService: PrismaService) => {
