@@ -11,6 +11,7 @@ import { SupabaseAvatarService } from './avatar/supabase-avatar.service';
 import { UsersRepository } from './users.repository';
 import { AuthModule } from '../auth/auth.module';
 import { UserBusinessValidator } from './utils/business.validator';
+import { EmailService } from '../../email/email.service';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { UserBusinessValidator } from './utils/business.validator';
     JwtStrategy,
     JwtAuthGuard,
     UsersService,
+    EmailService,
     UsersRepository,
     SupabaseAvatarService,
     UserBusinessValidator,
