@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { TasksRepository } from './tasks.repository';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
+import { Task } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
@@ -165,5 +166,12 @@ export class TasksService {
   // tasks.service.ts
   async getAllTasksForCalendar(userId: string): Promise<TaskForCalendarDto[]> {
     return await this.tasksRepository.findAllForCalendar(userId);
+  }
+  async toggleComplete(taskId: string, isCompleted: boolean): Promise<Task> {
+    const task = await this.tasksRepository.findById(taskId);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+    return this.tasksRepository.toggleComplete(taskId, isCompleted);
   }
 }
