@@ -4,7 +4,7 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
+  Param, Patch,
   Post,
   Put,
   Query,
@@ -23,6 +23,8 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
 import { CurrentUserDecorator } from '../../common/decorators/current-user.decorator';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
+import { ToggleCompleteDto } from './dto/toggle-complete.dto';
+import { Task } from '@prisma/client';
 
 @Controller('tasks')
 export class TasksController {
@@ -161,5 +163,10 @@ export class TasksController {
   @ApiResponseInternalServerErrorDecorator()
   async deleteTask(@Param('id') id: string) {
     return this.tasksService.deleteTask(id);
+  }
+  @Patch('toggle-complete')
+  @ApiOperation({ summary: 'Toggle task completion status' })
+  async toggleComplete(@Body() dto: ToggleCompleteDto): Promise<Task> {
+    return this.tasksService.toggleComplete(dto.taskId, dto.isCompleted);
   }
 }

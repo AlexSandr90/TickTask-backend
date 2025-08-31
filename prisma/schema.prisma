@@ -12,20 +12,20 @@ model User {
   id                 String    @id @default(uuid())
   username           String
   email              String    @unique
-  pendingEmail       String?
-  emailChangeToken   String?
   passwordHash       String?
   createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
   lastLogin          DateTime?
   theme              String    @default("light")
   notifications      Boolean   @default(true)
   refreshToken       String?
+  updatedAt          DateTime  @updatedAt
   isActive           Boolean   @default(false)
   googleId           String?   @unique
   passwordResetToken String?
   avatarPath         String?
   timezone           String    @default("UTC")
+  emailChangeToken   String?
+  pendingEmail       String?
   boards             Board[]
   Task               Task[]
 }
@@ -37,9 +37,9 @@ model Board {
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  position    Int      @default(0)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   columns     Column[]
-  position    Int      @default(0) // Добавляем позицию
 }
 
 model Column {
@@ -48,7 +48,7 @@ model Column {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   boardId   String
-  position  Float    @default(0) // <- меняем с Int на Float
+  position  Float    @default(0)
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   tasks     Task[]
 }
@@ -58,13 +58,14 @@ model Task {
   title       String
   description String?
   columnId    String
-  userId      String?
-  deadline    DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   position    Float     @default(0)
   priority    Int       @default(1)
   tags        String[]
+  userId      String?
+  deadline    DateTime?
+  isCompleted Boolean   @default(false)
   column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?     @relation(fields: [userId], references: [id])
 }

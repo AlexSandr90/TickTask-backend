@@ -3,11 +3,11 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { getNextPosition } from '../../common/utils/position.util';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
+import { Task } from '@prisma/client';
 
 @Injectable()
 export class TasksRepository {
-  constructor(private readonly prisma: PrismaService) {
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
@@ -116,8 +116,7 @@ export class TasksRepository {
     });
   }
 
-
-// tasks.repository.ts
+  // tasks.repository.ts
   async findAllForCalendar(userId: string): Promise<TaskForCalendarDto[]> {
     const tasks = await this.prisma.task.findMany({
       where: { userId }, // фильтр по текущему пользователю
@@ -133,7 +132,7 @@ export class TasksRepository {
       return a.deadline.getTime() - b.deadline.getTime();
     });
 
-    return tasks.map(task => ({
+    return tasks.map((task) => ({
       id: task.id,
       title: task.title,
       description: task.description ?? undefined,
@@ -147,5 +146,15 @@ export class TasksRepository {
       userId: task.userId ?? undefined,
     }));
   }
-}
 
+  async toggleComplete(taskId: string, isCompleted: boolean): Promise<Task> {
+    return this.prisma.task.update({
+      where: { id: taskId },
+      data: { isCompleted },
+    });
+  }
+
+  async findById(taskId: string): Promise<Task | null> {
+    return this.prisma.task.findUnique({ where: { id: taskId } });
+  }
+}
