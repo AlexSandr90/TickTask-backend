@@ -54,6 +54,7 @@ export class TasksRepository {
       title?: string;
       description?: string;
       deadline?: Date | null;
+      isCompleted?: boolean; // <-- добавляем
     },
   ) {
     return this.prisma.task.update({
@@ -156,5 +157,11 @@ export class TasksRepository {
 
   async findById(taskId: string): Promise<Task | null> {
     return this.prisma.task.findUnique({ where: { id: taskId } });
+  }
+
+  async findAllByUser(userId: string): Promise<Task[]> {
+    return this.prisma.task.findMany({
+      where: { userId },
+    });
   }
 }

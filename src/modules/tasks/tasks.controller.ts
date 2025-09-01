@@ -4,7 +4,8 @@ import {
   Controller,
   Delete,
   Get,
-  Param, Patch,
+  Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -109,9 +110,9 @@ export class TasksController {
       body.title,
       body.description,
       body.columnId,
-      body.priority,
-      body.tags,
-      user.id, // передаём userId в сервис
+      user.id, // userId передаем вторым
+      body.priority, // priority
+      body.tags, // tags
     );
   }
 
@@ -152,7 +153,7 @@ export class TasksController {
   @ApiOperation({ summary: 'Delete task for Column ID' })
   @ApiResponse({
     status: 200,
-    description: 'The user deleted task for column iD',
+    description: 'The user deleted task for column ID',
   })
   @ApiResponseBadRequestDecorator(
     'Bad Request – Invalid task ID or missing param',
@@ -161,12 +162,24 @@ export class TasksController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
-  async deleteTask(@Param('id') id: string) {
-    return this.tasksService.deleteTask(id);
+  async deleteTask(
+    @Param('id') id: string,
+    @CurrentUserDecorator() user: { id: string }, // получаем пользователя
+  ) {
+    return this.tasksService.deleteTask(id, user.id);
   }
+
   @Patch('toggle-complete')
   @ApiOperation({ summary: 'Toggle task completion status' })
-  async toggleComplete(@Body() dto: ToggleCompleteDto): Promise<Task> {
-    return this.tasksService.toggleComplete(dto.taskId, dto.isCompleted);
+  @JwtAuthDecorator()
+  async toggleComplete(
+    @Body() dto: ToggleCompleteDto,
+    @CurrentUserDecorator() user: { id: string }, // получаем пользователя через декоратор
+  ): Promise<Task> {
+    return this.tasksService.toggleComplete(
+      dto.taskId,
+      dto.isCompleted,
+      user.id, // userId передаём в сервис
+    );
   }
 }

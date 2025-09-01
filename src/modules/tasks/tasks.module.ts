@@ -5,10 +5,15 @@ import { TasksService } from './tasks.service';
 import { TasksRepository } from './tasks.repository';
 import { TaskSearchController } from './task-search.controller';
 import { TasksPositionsController } from './tasks-positions.controller';
+import { AnalyticsModule } from '../analytics/analystics.module';
 
 @Module({
-  imports: [PrismaModule],
-  controllers: [TasksPositionsController, TasksController, TaskSearchController],
+  imports: [PrismaModule, AnalyticsModule],
+  controllers: [
+    TasksPositionsController,
+    TasksController,
+    TaskSearchController,
+  ],
   providers: [TasksService, TasksRepository],
   exports: [TasksService],
 })

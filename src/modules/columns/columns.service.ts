@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ColumnsRepository } from './columns.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class ColumnsService {
   constructor(
     private readonly columnRepository: ColumnsRepository,
+    private readonly analyticsService: AnalyticsService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   async getAllColumns(boardId: string) {
     return this.columnRepository.findAll(boardId);
@@ -17,7 +19,7 @@ export class ColumnsService {
     return this.columnRepository.findOne(id);
   }
 
-  async createColumn(title: string, boardId: string) {
+  async createColumn(title: string, boardId: string, userId: string) {
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
     });
@@ -26,14 +28,28 @@ export class ColumnsService {
       throw new NotFoundException(`Board with id ${boardId} not found!`);
     }
 
-    return this.columnRepository.create({ title, boardId });
+    // Создаём колонку
+    const column = await this.columnRepository.create({ title, boardId });
+
+    // Обновляем аналитику пользователя (увеличиваем количество колонок)
+    await this.analyticsService.updateAnalytics(userId, {
+      totalColumns: { increment: 1 },
+    });
+
+    return column;
   }
   async updateColumn(id: string, title?: string, position?: number) {
-    const updatedColumn = await this.columnRepository.update(id, { title, position });
+    const updatedColumn = await this.columnRepository.update(id, {
+      title,
+      position,
+    });
     return updatedColumn;
   }
 
-  async updateColumnPositions(boardId: string, updates: { id: string; position: number }[]) {
+  async updateColumnPositions(
+    boardId: string,
+    updates: { id: string; position: number }[],
+  ) {
     const columns = await this.prisma.column.findMany({
       where: { boardId },
       select: { id: true },
@@ -52,7 +68,11 @@ export class ColumnsService {
     );
   }
 
-  async searchColumnsInBoard(boardId: string, query: string, position: 'asc' | 'desc' = 'asc') {
+  async searchColumnsInBoard(
+    boardId: string,
+    query: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
     return this.columnRepository.searchColumnsInBoard(boardId, query, position);
   }
 
