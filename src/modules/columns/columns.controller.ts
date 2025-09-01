@@ -8,6 +8,7 @@ import {
   Delete,
   Controller,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ColumnsService } from './columns.service';
@@ -18,7 +19,7 @@ import {
   ApiResponseUnauthorizedDecorator,
   ApiResponseInternalServerErrorDecorator,
 } from '../../common/decorators/swagger';
-import { ColumnDto } from './dto/column.dto';
+
 import { CreateColumnDto } from './dto/create-column.dto';
 import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
 import { UpdateColumnDto } from './dto/update-column.dto';
@@ -26,7 +27,7 @@ import { UpdateColumnPositionsDto } from './dto/update-columns-positions.dto';
 
 @Controller('columns')
 export class ColumnsController {
-  constructor(private readonly columnsService: ColumnsService) { }
+  constructor(private readonly columnsService: ColumnsService) {}
 
   @Get()
   @JwtAuthDecorator()
@@ -82,8 +83,12 @@ export class ColumnsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Column not found')
   @ApiResponseInternalServerErrorDecorator()
-  async createColumn(@Body() body: CreateColumnDto) {
-    return this.columnsService.createColumn(body.title, body.boardId);
+  async createColumn(
+    @Body() body: CreateColumnDto,
+    @Req() req: Request & { user: { id: string } }, // типизируем user
+  ) {
+    const userId = req.user.id;
+    return this.columnsService.createColumn(body.title, body.boardId, userId);
   }
 
   @Put('positions')
@@ -100,13 +105,12 @@ export class ColumnsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Column not found')
   @ApiResponseInternalServerErrorDecorator()
-  async updateColumnPositions(
-    @Body() body: UpdateColumnPositionsDto,
-  ) {
-    return this.columnsService.updateColumnPositions(body.boardId, body.updates);
+  async updateColumnPositions(@Body() body: UpdateColumnPositionsDto) {
+    return this.columnsService.updateColumnPositions(
+      body.boardId,
+      body.updates,
+    );
   }
-
-
 
   @Put(':id')
   @JwtAuthDecorator()
@@ -125,8 +129,6 @@ export class ColumnsController {
   async updateColumn(@Param('id') id: string, @Body() body: UpdateColumnDto) {
     return this.columnsService.updateColumn(id, body.title, body.position);
   }
-
-
 
   @Delete(':id')
   @JwtAuthDecorator()
