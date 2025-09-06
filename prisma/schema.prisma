@@ -74,19 +74,20 @@ model Task {
 }
 
 model UserAnalytics {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
-  totalBoards         Int      @default(0)
-  totalColumns        Int      @default(0)
-  totalTasks          Int      @default(0)
-  completedTasks      Int      @default(0)
-  completedTasksTotal Int      @default(0) // суммарные завершённые, даже удалённые
-  inProgressTasks     Int      @default(0)
-  currentStreak       Int      @default(0) // дни подряд онлайн
-  longestStreak       Int      @default(0) // рекорд онлайн дней
-  totalTimeSpent      Int      @default(0) // в минутах или секундах
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                  String    @id @default(uuid())
+  userId              String    @unique
+  totalBoards         Int       @default(0)
+  totalColumns        Int       @default(0)
+  totalTasks          Int       @default(0)
+  completedTasks      Int       @default(0)
+  completedTasksTotal Int       @default(0) // суммарные завершённые, даже удалённые
+  inProgressTasks     Int       @default(0)
+  currentStreak       Int       @default(0) // дни подряд онлайн
+  longestStreak       Int       @default(0) // рекорд онлайн дней
+  totalTimeSpent      Int       @default(0) // в минутах или секундах
+  lastHeartbeat       DateTime? // последний успешный heartbeat
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

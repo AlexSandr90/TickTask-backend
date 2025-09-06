@@ -25,6 +25,7 @@ export class AnalyticsService {
       currentStreak?: { increment?: number; decrement?: number; set?: number };
       longestStreak?: { increment?: number; decrement?: number; set?: number };
       totalTimeSpent?: { increment?: number; decrement?: number; set?: number };
+      lastHeartbeat?: Date; // ← добавлено
     },
   ) {
     try {
@@ -52,6 +53,7 @@ export class AnalyticsService {
             data.longestStreak?.set ?? data.longestStreak?.increment ?? 0,
           totalTimeSpent:
             data.totalTimeSpent?.set ?? data.totalTimeSpent?.increment ?? 0,
+          lastHeartbeat: data.lastHeartbeat ?? undefined, // ← добавлено
         },
       });
     } catch (error: unknown) {
