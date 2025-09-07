@@ -194,20 +194,25 @@ export class TasksService {
     return this.tasksRepository.searchTasksInUser(query, position);
   }
 
-  async deleteTask(taskId: string, userId: string) {
+  async deleteTaskUnified(taskId: string, userId: string): Promise<Task> {
     const task = await this.tasksRepository.findById(taskId);
     if (!task) throw new NotFoundException('Task not found');
 
-    const analyticsUpdate: AnalyticsUpdate = {};
-    if (!task.isCompleted) {
-      analyticsUpdate.inProgressTasks = { decrement: 1 };
-    } else {
+    const deletedTask = await this.tasksRepository.delete(taskId);
+
+    const analyticsUpdate: AnalyticsUpdate = {
+      totalTasks: { decrement: 1 },
+    };
+
+    if (task.isCompleted) {
       analyticsUpdate.completedTasks = { decrement: 1 };
+    } else {
+      analyticsUpdate.inProgressTasks = { decrement: 1 };
     }
 
     await this.analyticsService.updateAnalytics(userId, analyticsUpdate);
 
-    return this.tasksRepository.delete(taskId);
+    return deletedTask;
   }
 
   async getAllTasksForCalendar(userId: string): Promise<TaskForCalendarDto[]> {
@@ -223,7 +228,6 @@ export class TasksService {
     const task = await this.tasksRepository.findById(taskId);
     if (!task) throw new NotFoundException('Task not found');
 
-    // ✅ КЛЮЧЕВАЯ ПРОВЕРКА: предотвращаем двойное засчитывание
     const wasAlreadyCompleted = task.isCompleted;
 
     await this.tasksRepository.toggleComplete(taskId, isCompleted);
@@ -231,17 +235,16 @@ export class TasksService {
     const analyticsUpdate: AnalyticsUpdate = {};
 
     if (isCompleted && !wasAlreadyCompleted) {
-      // Задача завершается ВПЕРВЫЕ
+      // Завершаем задачу впервые
       analyticsUpdate.inProgressTasks = { decrement: 1 };
       analyticsUpdate.completedTasks = { increment: 1 };
-      analyticsUpdate.completedTasksTotal = { increment: 1 }; // ✅ Засчитываем только при первом завершении
+      analyticsUpdate.completedTasksTotal = { increment: 1 }; // только первый раз
     } else if (!isCompleted && wasAlreadyCompleted) {
-      // Отменяем завершение
+      // Снимаем галочку
       analyticsUpdate.inProgressTasks = { increment: 1 };
       analyticsUpdate.completedTasks = { decrement: 1 };
-      // completedTasksTotal НЕ уменьшается - это общий счетчик всех когда-либо завершенных задач
+      analyticsUpdate.completedTasksTotal = { decrement: 1 }; // уменьшаем
     }
-    // Если задача уже была завершена и мы снова ставим true - ничего не делаем
 
     if (Object.keys(analyticsUpdate).length > 0) {
       await this.analyticsService.updateAnalytics(userId, analyticsUpdate);
@@ -253,6 +256,7 @@ export class TasksService {
     return updatedTask;
   }
 
+  // Обновление статистики по задачам
   async refreshTaskStats(userId: string) {
     const tasks = await this.tasksRepository.findAllByUser(userId);
 
@@ -262,6 +266,7 @@ export class TasksService {
     await this.analyticsService.updateAnalytics(userId, {
       inProgressTasks: { set: inProgress },
       completedTasks: { set: completed },
+      // completedTasksTotal НЕ трогаем — это общий счетчик
     });
   }
 }

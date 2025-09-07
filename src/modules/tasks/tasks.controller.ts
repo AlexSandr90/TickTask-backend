@@ -160,13 +160,13 @@ export class TasksController {
   )
   @ApiResponseUnauthorizedDecorator()
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
-  @ApiResponseNotFoundDecorator()
+  @ApiResponseNotFoundDecorator('Task not found')
   @ApiResponseInternalServerErrorDecorator()
   async deleteTask(
     @Param('id') id: string,
-    @CurrentUserDecorator() user: { id: string }, // получаем пользователя
+    @CurrentUserDecorator() user: { id: string },
   ) {
-    return this.tasksService.deleteTask(id, user.id);
+    return this.tasksService.deleteTaskUnified(id, user.id);
   }
 
   @Patch('toggle-complete')
@@ -174,12 +174,12 @@ export class TasksController {
   @JwtAuthDecorator()
   async toggleComplete(
     @Body() dto: ToggleCompleteDto,
-    @CurrentUserDecorator() user: { id: string }, // получаем пользователя через декоратор
+    @CurrentUserDecorator() user: { id: string },
   ): Promise<Task> {
     return this.tasksService.toggleComplete(
       dto.taskId,
       dto.isCompleted,
-      user.id, // userId передаём в сервис
+      user.id,
     );
   }
 }
