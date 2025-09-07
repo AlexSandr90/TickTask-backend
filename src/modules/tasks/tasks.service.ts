@@ -200,9 +200,7 @@ export class TasksService {
 
     const deletedTask = await this.tasksRepository.delete(taskId);
 
-    const analyticsUpdate: AnalyticsUpdate = {
-      totalTasks: { decrement: 1 },
-    };
+    const analyticsUpdate: AnalyticsUpdate = { totalTasks: { decrement: 1 } };
 
     if (task.isCompleted) {
       analyticsUpdate.completedTasks = { decrement: 1 };
@@ -235,15 +233,13 @@ export class TasksService {
     const analyticsUpdate: AnalyticsUpdate = {};
 
     if (isCompleted && !wasAlreadyCompleted) {
-      // Завершаем задачу впервые
       analyticsUpdate.inProgressTasks = { decrement: 1 };
       analyticsUpdate.completedTasks = { increment: 1 };
-      analyticsUpdate.completedTasksTotal = { increment: 1 }; // только первый раз
+      analyticsUpdate.completedTasksTotal = { increment: 1 };
     } else if (!isCompleted && wasAlreadyCompleted) {
-      // Снимаем галочку
       analyticsUpdate.inProgressTasks = { increment: 1 };
       analyticsUpdate.completedTasks = { decrement: 1 };
-      analyticsUpdate.completedTasksTotal = { decrement: 1 }; // уменьшаем
+      analyticsUpdate.completedTasksTotal = { decrement: 1 };
     }
 
     if (Object.keys(analyticsUpdate).length > 0) {
@@ -254,19 +250,5 @@ export class TasksService {
     if (!updatedTask) throw new NotFoundException('Task not found');
 
     return updatedTask;
-  }
-
-  // Обновление статистики по задачам
-  async refreshTaskStats(userId: string) {
-    const tasks = await this.tasksRepository.findAllByUser(userId);
-
-    const inProgress = tasks.filter((t) => !t.isCompleted).length;
-    const completed = tasks.filter((t) => t.isCompleted).length;
-
-    await this.analyticsService.updateAnalytics(userId, {
-      inProgressTasks: { set: inProgress },
-      completedTasks: { set: completed },
-      // completedTasksTotal НЕ трогаем — это общий счетчик
-    });
   }
 }

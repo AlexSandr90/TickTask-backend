@@ -12,16 +12,8 @@ export class AnalyticsService {
       totalColumns?: { increment?: number; decrement?: number; set?: number };
       totalTasks?: { increment?: number; decrement?: number; set?: number };
       completedTasks?: { increment?: number; decrement?: number; set?: number };
-      completedTasksTotal?: {
-        increment?: number;
-        decrement?: number;
-        set?: number;
-      };
-      inProgressTasks?: {
-        increment?: number;
-        decrement?: number;
-        set?: number;
-      };
+      completedTasksTotal?: { increment?: number; decrement?: number; set?: number };
+      inProgressTasks?: { increment?: number; decrement?: number; set?: number };
       currentStreak?: { increment?: number; decrement?: number; set?: number };
       longestStreak?: { increment?: number; decrement?: number; set?: number };
       totalTimeSpent?: { increment?: number; decrement?: number; set?: number };
@@ -34,93 +26,49 @@ export class AnalyticsService {
       });
 
       if (!currentAnalytics) {
-        // Если нет аналитики, создаём новую
+        // Создаем новую запись, если нет
         return this.prisma.userAnalytics.create({
           data: {
             userId,
-            totalBoards:
-              data.totalBoards?.set ?? data.totalBoards?.increment ?? 0,
-            totalColumns:
-              data.totalColumns?.set ?? data.totalColumns?.increment ?? 0,
+            totalBoards: data.totalBoards?.set ?? data.totalBoards?.increment ?? 0,
+            totalColumns: data.totalColumns?.set ?? data.totalColumns?.increment ?? 0,
             totalTasks: data.totalTasks?.set ?? data.totalTasks?.increment ?? 0,
-            completedTasks:
-              data.completedTasks?.set ?? data.completedTasks?.increment ?? 0,
-            completedTasksTotal:
-              data.completedTasksTotal?.set ??
-              data.completedTasksTotal?.increment ??
-              0,
-            inProgressTasks:
-              data.inProgressTasks?.set ?? data.inProgressTasks?.increment ?? 0,
-            currentStreak:
-              data.currentStreak?.set ?? data.currentStreak?.increment ?? 0,
-            longestStreak:
-              data.longestStreak?.set ?? data.longestStreak?.increment ?? 0,
-            totalTimeSpent:
-              data.totalTimeSpent?.set ?? data.totalTimeSpent?.increment ?? 0,
+            completedTasks: data.completedTasks?.set ?? data.completedTasks?.increment ?? 0,
+            completedTasksTotal: data.completedTasksTotal?.set ?? data.completedTasksTotal?.increment ?? 0,
+            inProgressTasks: data.inProgressTasks?.set ?? data.inProgressTasks?.increment ?? 0,
+            currentStreak: data.currentStreak?.set ?? data.currentStreak?.increment ?? 0,
+            longestStreak: data.longestStreak?.set ?? data.longestStreak?.increment ?? 0,
+            totalTimeSpent: data.totalTimeSpent?.set ?? data.totalTimeSpent?.increment ?? 0,
             lastHeartbeat: data.lastHeartbeat ?? undefined,
           },
         });
       }
 
-      // ==== Логика для completedTasksTotal ====
-      let newCompletedTasksTotal = currentAnalytics.completedTasksTotal;
+      // Функция для вычисления нового значения поля
+      const computeNewValue = (
+        current: number,
+        update?: { increment?: number; decrement?: number; set?: number },
+      ) => {
+        if (!update) return undefined;
+        if (update.set !== undefined) return update.set;
+        let val = current;
+        if (update.increment) val += update.increment;
+        if (update.decrement) val -= update.decrement;
+        return val;
+      };
 
-      if (data.completedTasksTotal) {
-        if (data.completedTasksTotal.increment) {
-          newCompletedTasksTotal += data.completedTasksTotal.increment;
-        }
-        if (data.completedTasksTotal.decrement) {
-          newCompletedTasksTotal -= data.completedTasksTotal.decrement;
-        }
-        if (data.completedTasksTotal.set !== undefined) {
-          newCompletedTasksTotal = data.completedTasksTotal.set;
-        }
-      }
-
-      // Обновляем аналитику
       return this.prisma.userAnalytics.update({
         where: { userId },
         data: {
-          totalBoards:
-            (data.totalBoards?.set ?? data.totalBoards?.increment)
-              ? currentAnalytics.totalBoards +
-                (data.totalBoards?.increment ?? 0)
-              : undefined,
-          totalColumns:
-            (data.totalColumns?.set ?? data.totalColumns?.increment)
-              ? currentAnalytics.totalColumns +
-                (data.totalColumns?.increment ?? 0)
-              : undefined,
-          totalTasks:
-            (data.totalTasks?.set ?? data.totalTasks?.increment)
-              ? currentAnalytics.totalTasks + (data.totalTasks?.increment ?? 0)
-              : undefined,
-          completedTasks:
-            (data.completedTasks?.set ?? data.completedTasks?.increment)
-              ? currentAnalytics.completedTasks +
-                (data.completedTasks?.increment ?? 0)
-              : undefined,
-          completedTasksTotal: newCompletedTasksTotal,
-          inProgressTasks:
-            (data.inProgressTasks?.set ?? data.inProgressTasks?.increment)
-              ? currentAnalytics.inProgressTasks +
-                (data.inProgressTasks?.increment ?? 0)
-              : undefined,
-          currentStreak:
-            (data.currentStreak?.set ?? data.currentStreak?.increment)
-              ? currentAnalytics.currentStreak +
-                (data.currentStreak?.increment ?? 0)
-              : undefined,
-          longestStreak:
-            (data.longestStreak?.set ?? data.longestStreak?.increment)
-              ? currentAnalytics.longestStreak +
-                (data.longestStreak?.increment ?? 0)
-              : undefined,
-          totalTimeSpent:
-            (data.totalTimeSpent?.set ?? data.totalTimeSpent?.increment)
-              ? currentAnalytics.totalTimeSpent +
-                (data.totalTimeSpent?.increment ?? 0)
-              : undefined,
+          totalBoards: computeNewValue(currentAnalytics.totalBoards, data.totalBoards),
+          totalColumns: computeNewValue(currentAnalytics.totalColumns, data.totalColumns),
+          totalTasks: computeNewValue(currentAnalytics.totalTasks, data.totalTasks),
+          completedTasks: computeNewValue(currentAnalytics.completedTasks, data.completedTasks),
+          completedTasksTotal: computeNewValue(currentAnalytics.completedTasksTotal, data.completedTasksTotal),
+          inProgressTasks: computeNewValue(currentAnalytics.inProgressTasks, data.inProgressTasks),
+          currentStreak: computeNewValue(currentAnalytics.currentStreak, data.currentStreak),
+          longestStreak: computeNewValue(currentAnalytics.longestStreak, data.longestStreak),
+          totalTimeSpent: computeNewValue(currentAnalytics.totalTimeSpent, data.totalTimeSpent),
           lastHeartbeat: data.lastHeartbeat ?? undefined,
         },
       });
