@@ -16,6 +16,13 @@ import { CurrentUserDecorator } from '../../common/decorators/current-user.decor
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
+  @Get('tasks-per-day/:userId')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Get user analytics' })
+  async getTasksPerDay(@Param('userId') userId: string) {
+    return this.analyticsService.getTasksPerDay(userId);
+  }
+
   // Получение аналитики пользователя (создаст запись, если нет)
   @Get(':userId')
   @JwtAuthDecorator()
