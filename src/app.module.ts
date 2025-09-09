@@ -8,6 +8,7 @@ import { ColumnsModule } from './modules/columns/columns.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { SearchModule } from './modules/search/search.module';
 import { UserActivityModule } from './modules/user-activity/user-activity.module';
+import { BoardInvitationsModule } from './modules/invitations/invitations.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UserActivityModule } from './modules/user-activity/user-activity.module
     TasksModule,
     SearchModule,
     UserActivityModule,
+    BoardInvitationsModule,
   ],
   controllers: [],
   providers: [],
