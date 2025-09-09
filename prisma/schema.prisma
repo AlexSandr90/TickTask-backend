@@ -9,40 +9,76 @@ datasource db {
 }
 
 model User {
-  id                 String         @id @default(uuid())
-  username           String
-  email              String         @unique
-  passwordHash       String?
-  createdAt          DateTime       @default(now())
-  lastLogin          DateTime?
-  theme              String         @default("light")
-  notifications      Boolean        @default(true)
-  refreshToken       String?
-  updatedAt          DateTime       @updatedAt
-  isActive           Boolean        @default(false)
-  googleId           String?        @unique
-  passwordResetToken String?
-  avatarPath         String?
-  timezone           String         @default("UTC")
-  emailChangeToken   String?
-  pendingEmail       String?
-  currentStreak      Int            @default(0) // дни подряд онлайн
-  longestStreak      Int            @default(0) // рекорд онлайн дней
-  boards             Board[]
-  Task               Task[]
-  UserAnalytics      UserAnalytics?
+  id                  String            @id @default(uuid())
+  username            String
+  email               String            @unique
+  passwordHash        String?
+  createdAt           DateTime          @default(now())
+  lastLogin           DateTime?
+  theme               String            @default("light")
+  notifications       Boolean           @default(true)
+  refreshToken        String?
+  updatedAt           DateTime          @updatedAt
+  isActive            Boolean           @default(false)
+  googleId            String?           @unique
+  passwordResetToken  String?
+  avatarPath          String?
+  timezone            String            @default("UTC")
+  emailChangeToken    String?
+  pendingEmail        String?
+  currentStreak       Int               @default(0)
+  longestStreak       Int               @default(0)
+  boards              Board[]
+  Task                Task[]
+  UserAnalytics       UserAnalytics?
+  boardsMembers       BoardMember[]
+  sentInvitations     BoardInvitation[] @relation("InvitationSender")
+  receivedInvitations BoardInvitation[] @relation("InvitationReceiver")
 }
 
 model Board {
-  id          String   @id @unique @default(uuid())
+  id          String            @id @unique @default(uuid())
   title       String
   description String?
   userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  position    Int      @default(0)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  position    Int               @default(0)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members     BoardMember[]
   columns     Column[]
+  invitations BoardInvitation[]
+}
+
+model BoardMember {
+  id      String    @id @default(uuid())
+  boardId String
+  userId  String
+  role    BoardRole @default(USER)
+  addedAt DateTime  @default(now())
+  addedBy String?
+  board   Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+}
+
+model BoardInvitation {
+  id         String           @id @default(uuid())
+  boardId    String
+  senderId   String
+  receiverId String?
+  email      String
+  role       BoardRole        @default(USER)
+  status     InvitationStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  expiresAt  DateTime?
+  token      String?          @unique
+  board      Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  sender     User             @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User?            @relation("InvitationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, email])
 }
 
 model Column {
@@ -90,4 +126,17 @@ model UserAnalytics {
   updatedAt           DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum BoardRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
 }

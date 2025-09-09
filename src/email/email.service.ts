@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { Injectable } from '@nestjs/common';
 import { EMAIL_TEMPLATES } from './email.constants';
+import { APP_CONFIG } from '../configurations/app.config';
 
 const resend = new Resend(process.env.EMAIL_API_KEY);
 
@@ -102,9 +103,9 @@ export class EmailService {
           color: #999;
           margin-top: 30px;
         }
-        .success { color: #4caf50; background-color: #4caf50; }
-        .danger { color: #f44336; background-color: #f44336; }
-        .info { color: #2196f3; background-color: #2196f3; }
+        .success {  background-color: #4caf50; }
+        .danger {  background-color: #f44336; }
+        .info {  background-color: #2196f3; }
       </style>
     `;
   }
@@ -194,10 +195,11 @@ export class EmailService {
   }
 
   async sendBoardInvitation(data: BoardInvitationData): Promise<void> {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const invitationUrl = `${frontendUrl}/board-invitation?token=${data.invitationToken}`;
+    const { to, boardTitle, invitationToken, expiresAt, senderName } = data;
+    const baseUrl = APP_CONFIG.baseUrl || 'http://localhost:3000';
+    const invitationUrl = `${baseUrl}/board-invitation?token=${invitationToken}`;
 
-    const expiresFormatted = data.expiresAt.toLocaleString('uk-UA', {
+    const expiresFormatted = expiresAt.toLocaleString('uk-UA', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -206,28 +208,28 @@ export class EmailService {
     });
 
     const content = `
-      <p>Привіт, ${data.receiverName}!</p>
-      <p><strong>${data.senderName}</strong> запросив тебе приєднатися до дошки "<strong>${data.boardTitle}</strong>".</p>
-      <p>Натисни на кнопку нижче, щоб прийняти запрошення:</p>
-      <p><small>Запрошення дійсне до: ${expiresFormatted}</small></p>
-      <p>Якщо ти не очікував цього запрошення, можеш проігнорувати цей лист.</p>
-    `;
+        <p>Привіт, ${data.receiverName}!</p>
+        <p><strong>${data.senderName}</strong> запросив тебе приєднатися до дошки "<strong>${data.boardTitle}</strong>".</p>
+        <p>Натисни на кнопку нижче, щоб прийняти запрошення:</p>
+        <p><small>Запрошення дійсне до: ${expiresFormatted}</small></p>
+        <p>Якщо ти не очікував цього запрошення, можеш проігнорувати цей лист.</p>
+      `;
 
     const html = this.createHtmlTemplate(
-      `Запрошення до дошки "${data.boardTitle}"`,
+      `Запрошення до дошки "${boardTitle}"`,
       content,
       'Прийняти запрошення',
       invitationUrl,
       'info',
     );
 
-    const textVersion = `${data.senderName} запросив тебе до дошки "${data.boardTitle}". 
-Перейди за посиланням, щоб прийняти запрошення: ${invitationUrl}
-Запрошення дійсне до: ${expiresFormatted}`;
+    const textVersion = `${senderName} запросив тебе до дошки "${boardTitle}".
+  Перейди за посиланням, щоб прийняти запрошення: ${invitationUrl}
+  Запрошення дійсне до: ${expiresFormatted}`;
 
     await this.sendEmail({
-      to: data.to,
-      subject: `Запрошення до дошки "${data.boardTitle}"`,
+      to,
+      subject: `Запрошення до дошки "${boardTitle}"`,
       text: textVersion,
       html,
     });

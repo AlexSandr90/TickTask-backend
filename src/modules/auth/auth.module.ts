@@ -9,6 +9,7 @@ import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
 import { EmailService } from '../../email/email.service';
+import { JwtStrategy } from './strategy/jwt.strategy';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { EmailService } from '../../email/email.service';
   providers: [
     AuthService,
     EmailService,
+    JwtStrategy,
     PrismaService,
     GoogleStrategy,
     {
