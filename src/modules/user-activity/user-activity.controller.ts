@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Param,
+  Body,
   ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -22,14 +23,17 @@ export class UserActivityController {
   async heartbeat(
     @Param('userId') userId: string,
     @CurrentUserDecorator() user: { id: string },
+    @Body() body: { secondsToAdd?: number }, // принимаем количество секунд
   ): Promise<UserActivityDto> {
     if (user.id !== userId) {
       throw new ForbiddenException('Cannot update another user activity');
     }
 
     try {
-      const updatedActivity =
-        await this.activityService.updateUserActivity(userId);
+      const updatedActivity = await this.activityService.updateUserActivity(
+        userId,
+        body.secondsToAdd ?? 0, // передаем в сервис
+      );
       return updatedActivity;
     } catch (error: unknown) {
       if (error instanceof Error) {
