@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import dayjs from 'dayjs';
+import { UserActivityDto } from './dto/user-activiti.dto';
 
 @Injectable()
 export class UserActivityService {
@@ -10,10 +11,12 @@ export class UserActivityService {
     private analyticsService: AnalyticsService,
   ) {}
 
-  private formatTimeSpent(minutes: number): string {
-    if (minutes <= 0) return '0 минут';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+  private formatTimeSpent(seconds: number): string {
+    if (seconds <= 0) return '0 секунд';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
     const hoursStr =
       hours > 0
         ? `${hours} ${hours === 1 ? 'час' : hours < 5 ? 'часа' : 'часов'}`
@@ -22,26 +25,32 @@ export class UserActivityService {
       mins > 0
         ? `${mins} ${mins === 1 ? 'минута' : mins < 5 ? 'минуты' : 'минут'}`
         : '';
-    return [hoursStr, minsStr].filter(Boolean).join(' ');
+    const secsStr =
+      secs > 0
+        ? `${secs} ${secs === 1 ? 'секунда' : secs < 5 ? 'секунды' : 'секунд'}`
+        : '';
+
+    return [hoursStr, minsStr, secsStr].filter(Boolean).join(' ');
   }
 
-  async updateUserActivity(userId: string, retry = 0): Promise<any> {
+  async updateUserActivity(
+    userId: string,
+    secondsToAdd: number = 0, // теперь сервер принимает секунды
+    retry = 0,
+  ): Promise<UserActivityDto> {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error(`User ${userId} not found`);
 
       const analytics = await this.prisma.userAnalytics.findUnique({
         where: { userId },
       });
-
       if (!analytics) throw new Error(`Analytics for user ${userId} not found`);
 
       const now = new Date();
       const today = dayjs().startOf('day');
 
-      // ======== Streak logic ========
+      // ===== Streak logic =====
       let newCurrentStreak = user.currentStreak;
       let newLongestStreak = user.longestStreak;
 
@@ -51,7 +60,6 @@ export class UserActivityService {
       } else {
         const lastLogin = dayjs(user.lastLogin).startOf('day');
         const daysDiff = today.diff(lastLogin, 'day');
-
         if (daysDiff === 1) {
           newCurrentStreak = user.currentStreak + 1;
           newLongestStreak = Math.max(user.longestStreak, newCurrentStreak);
@@ -60,14 +68,7 @@ export class UserActivityService {
         }
       }
 
-      const lastHeartbeat = analytics.lastHeartbeat;
-      const minutesSinceLastHeartbeat = lastHeartbeat
-        ? (now.getTime() - lastHeartbeat.getTime()) / 60000
-        : Infinity;
-
-      const shouldIncrement = minutesSinceLastHeartbeat >= 1;
-
-      // ======== Update user ========
+      // ===== Update user =====
       await this.prisma.user.update({
         where: { id: userId },
         data: {
@@ -77,29 +78,34 @@ export class UserActivityService {
         },
       });
 
-      // ======== Update analytics ========
+      // ===== Update analytics =====
       const updatedAnalytics = await this.analyticsService.updateAnalytics(
         userId,
         {
-          totalTimeSpent: shouldIncrement ? { increment: 1 } : undefined,
+          totalTimeSpent:
+            secondsToAdd > 0
+              ? { increment: secondsToAdd } // прибавляем секунды
+              : undefined,
           currentStreak: { set: newCurrentStreak },
           longestStreak: { set: newLongestStreak },
-          lastHeartbeat: shouldIncrement ? now : undefined,
+          lastHeartbeat: secondsToAdd > 0 ? now : undefined,
         },
       );
 
       return {
-        ...updatedAnalytics,
+        totalTimeSpent: updatedAnalytics.totalTimeSpent,
         totalTimeSpentFormatted: this.formatTimeSpent(
           updatedAnalytics.totalTimeSpent,
         ),
+        currentStreak: updatedAnalytics.currentStreak,
+        longestStreak: updatedAnalytics.longestStreak,
+        lastHeartbeat: updatedAnalytics.lastHeartbeat ?? undefined,
       };
-    } catch (err) {
-      // Retry до 3 раз
-      if (retry < 3) {
-        return this.updateUserActivity(userId, retry + 1);
-      }
-      throw err;
+    } catch (err: unknown) {
+      if (retry < 3)
+        return this.updateUserActivity(userId, secondsToAdd, retry + 1);
+      if (err instanceof Error) throw err;
+      throw new Error('Unknown error updating user activity');
     }
   }
 }
