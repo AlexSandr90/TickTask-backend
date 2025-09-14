@@ -29,11 +29,11 @@ model User {
   currentStreak       Int               @default(0)
   longestStreak       Int               @default(0)
   boards              Board[]
+  receivedInvitations BoardInvitation[] @relation("InvitationReceiver")
+  sentInvitations     BoardInvitation[] @relation("InvitationSender")
+  boardsMembers       BoardMember[]
   Task                Task[]
   UserAnalytics       UserAnalytics?
-  boardsMembers       BoardMember[]
-  sentInvitations     BoardInvitation[] @relation("InvitationSender")
-  receivedInvitations BoardInvitation[] @relation("InvitationReceiver")
 }
 
 model Board {
@@ -45,9 +45,9 @@ model Board {
   updatedAt   DateTime          @updatedAt
   position    Int               @default(0)
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invitations BoardInvitation[]
   members     BoardMember[]
   columns     Column[]
-  invitations BoardInvitation[]
 }
 
 model BoardMember {
@@ -68,15 +68,15 @@ model BoardInvitation {
   boardId    String
   senderId   String
   receiverId String?
-  email      String
   role       BoardRole        @default(USER)
   status     InvitationStatus @default(PENDING)
   createdAt  DateTime         @default(now())
   expiresAt  DateTime?
   token      String?          @unique
+  email      String
   board      Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  sender     User             @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver   User?            @relation("InvitationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User             @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, email])
 }
@@ -116,16 +116,15 @@ model UserAnalytics {
   totalColumns        Int       @default(0)
   totalTasks          Int       @default(0)
   completedTasks      Int       @default(0)
-  completedTasksTotal Int       @default(0) // суммарные завершённые, даже удалённые
   inProgressTasks     Int       @default(0)
-  currentStreak       Int       @default(0) // дни подряд онлайн
-  longestStreak       Int       @default(0) // рекорд онлайн дней
-  totalTimeSpent      Int       @default(0) // в минутах или секундах
-  lastHeartbeat       DateTime? // последний успешный heartbeat
+  currentStreak       Int       @default(0)
+  longestStreak       Int       @default(0)
+  totalTimeSpent      BigInt    @default(0)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedTasksTotal Int       @default(0)
+  lastHeartbeat       DateTime?
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum BoardRole {

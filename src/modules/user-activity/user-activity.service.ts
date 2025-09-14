@@ -4,6 +4,11 @@ import { AnalyticsService } from '../analytics/analytics.service';
 import dayjs from 'dayjs';
 import { UserActivityDto } from './dto/user-activiti.dto';
 
+interface MotivationalMessage {
+  emoji: string;
+  text: string;
+}
+
 @Injectable()
 export class UserActivityService {
   constructor(
@@ -33,9 +38,66 @@ export class UserActivityService {
     return [hoursStr, minsStr, secsStr].filter(Boolean).join(' ');
   }
 
+  /**
+   * Генерирует мотивационное сообщение на основе общего времени в минутах
+   * Теперь логика находится на сервере для безопасности
+   */
+  private getMotivationalMessage(totalMinutes: number): MotivationalMessage {
+    const totalHours = Math.floor(totalMinutes / 60);
+
+    if (totalHours < 1) {
+      return { emoji: '🌱', text: 'Только начинаете!' };
+    }
+    if (totalHours < 10) {
+      return { emoji: '🚀', text: 'Набираете обороты!' };
+    }
+    if (totalHours < 50) {
+      return { emoji: '🔥', text: 'Горите! Продолжайте!' };
+    }
+    if (totalHours < 100) {
+      return { emoji: '💪', text: 'Невероятная преданность!' };
+    }
+    return { emoji: '👑', text: 'Вы настоящий мастер!' };
+  }
+
+  /**
+   * Вычисляет разбивку времени на годы, месяцы, дни, часы, минуты
+   * Перенесено с фронта для консистентности данных
+   */
+  private calculateTimeBreakdown(totalMinutes: number) {
+    let remainingMinutes = totalMinutes;
+
+    const minutesInHour = 60;
+    const hoursInDay = 24;
+    const daysInMonth = 30;
+    const monthsInYear = 12;
+
+    const years = Math.floor(
+      remainingMinutes /
+        (minutesInHour * hoursInDay * daysInMonth * monthsInYear),
+    );
+    remainingMinutes -=
+      years * minutesInHour * hoursInDay * daysInMonth * monthsInYear;
+
+    const months = Math.floor(
+      remainingMinutes / (minutesInHour * hoursInDay * daysInMonth),
+    );
+    remainingMinutes -= months * minutesInHour * hoursInDay * daysInMonth;
+
+    const days = Math.floor(remainingMinutes / (minutesInHour * hoursInDay));
+    remainingMinutes -= days * minutesInHour * hoursInDay;
+
+    const hours = Math.floor(remainingMinutes / minutesInHour);
+    remainingMinutes -= hours * minutesInHour;
+
+    const minutes = remainingMinutes;
+
+    return { years, months, days, hours, minutes };
+  }
+
   async updateUserActivity(
     userId: string,
-    secondsToAdd: number = 0, // теперь сервер принимает секунды
+    secondsToAdd: number = 0,
     retry = 0,
   ): Promise<UserActivityDto> {
     try {
@@ -78,28 +140,34 @@ export class UserActivityService {
         },
       });
 
-      // ===== Update analytics =====
-      const updatedAnalytics = await this.analyticsService.updateAnalytics(
-        userId,
-        {
-          totalTimeSpent:
-            secondsToAdd > 0
-              ? { increment: secondsToAdd } // прибавляем секунды
-              : undefined,
-          currentStreak: { set: newCurrentStreak },
-          longestStreak: { set: newLongestStreak },
+      // ===== Обновление аналитики =====
+      const updatedAnalytics =
+        await this.analyticsService.updateAnalyticsCustom(userId, {
+          totalTimeSpentIncrement: secondsToAdd > 0 ? secondsToAdd : undefined,
+          currentStreak: newCurrentStreak,
+          longestStreak: newLongestStreak,
           lastHeartbeat: secondsToAdd > 0 ? now : undefined,
-        },
-      );
+        });
+
+      // ===== Convert BigInt to number safely =====
+      const totalTimeSpentNumber = Number(updatedAnalytics.totalTimeSpent);
+
+      // ===== Вычисляем мотивационное сообщение и разбивку времени =====
+      const totalMinutes = Math.floor(totalTimeSpentNumber / 60);
+      const motivationalMessage = this.getMotivationalMessage(totalMinutes);
+      const timeBreakdown = this.calculateTimeBreakdown(totalMinutes);
 
       return {
-        totalTimeSpent: updatedAnalytics.totalTimeSpent,
-        totalTimeSpentFormatted: this.formatTimeSpent(
-          updatedAnalytics.totalTimeSpent,
-        ),
+        totalTimeSpent: totalTimeSpentNumber,
+        totalTimeSpentFormatted: this.formatTimeSpent(totalTimeSpentNumber),
         currentStreak: updatedAnalytics.currentStreak,
         longestStreak: updatedAnalytics.longestStreak,
         lastHeartbeat: updatedAnalytics.lastHeartbeat ?? undefined,
+        // ===== Новые поля для фронтенда =====
+        motivationalMessage,
+        timeBreakdown,
+        totalHours: Math.floor(totalMinutes / 60),
+        totalMinutes,
       };
     } catch (err: unknown) {
       if (retry < 3)
