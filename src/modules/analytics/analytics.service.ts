@@ -12,8 +12,16 @@ export class AnalyticsService {
       totalColumns?: { increment?: number; decrement?: number; set?: number };
       totalTasks?: { increment?: number; decrement?: number; set?: number };
       completedTasks?: { increment?: number; decrement?: number; set?: number };
-      completedTasksTotal?: { increment?: number; decrement?: number; set?: number };
-      inProgressTasks?: { increment?: number; decrement?: number; set?: number };
+      completedTasksTotal?: {
+        increment?: number;
+        decrement?: number;
+        set?: number;
+      };
+      inProgressTasks?: {
+        increment?: number;
+        decrement?: number;
+        set?: number;
+      };
       currentStreak?: { increment?: number; decrement?: number; set?: number };
       longestStreak?: { increment?: number; decrement?: number; set?: number };
       totalTimeSpent?: { increment?: number; decrement?: number; set?: number };
@@ -30,28 +38,41 @@ export class AnalyticsService {
         return this.prisma.userAnalytics.create({
           data: {
             userId,
-            totalBoards: data.totalBoards?.set ?? data.totalBoards?.increment ?? 0,
-            totalColumns: data.totalColumns?.set ?? data.totalColumns?.increment ?? 0,
+            totalBoards:
+              data.totalBoards?.set ?? data.totalBoards?.increment ?? 0,
+            totalColumns:
+              data.totalColumns?.set ?? data.totalColumns?.increment ?? 0,
             totalTasks: data.totalTasks?.set ?? data.totalTasks?.increment ?? 0,
-            completedTasks: data.completedTasks?.set ?? data.completedTasks?.increment ?? 0,
-            completedTasksTotal: data.completedTasksTotal?.set ?? data.completedTasksTotal?.increment ?? 0,
-            inProgressTasks: data.inProgressTasks?.set ?? data.inProgressTasks?.increment ?? 0,
-            currentStreak: data.currentStreak?.set ?? data.currentStreak?.increment ?? 0,
-            longestStreak: data.longestStreak?.set ?? data.longestStreak?.increment ?? 0,
-            totalTimeSpent: data.totalTimeSpent?.set ?? data.totalTimeSpent?.increment ?? 0,
+            completedTasks:
+              data.completedTasks?.set ?? data.completedTasks?.increment ?? 0,
+            completedTasksTotal:
+              data.completedTasksTotal?.set ??
+              data.completedTasksTotal?.increment ??
+              0,
+            inProgressTasks:
+              data.inProgressTasks?.set ?? data.inProgressTasks?.increment ?? 0,
+            currentStreak:
+              data.currentStreak?.set ?? data.currentStreak?.increment ?? 0,
+            longestStreak:
+              data.longestStreak?.set ?? data.longestStreak?.increment ?? 0,
+            totalTimeSpent:
+              data.totalTimeSpent?.set ?? data.totalTimeSpent?.increment ?? 0,
             lastHeartbeat: data.lastHeartbeat ?? undefined,
           },
         });
       }
 
-      // Функция для вычисления нового значения поля
+      // Функция для вычисления нового значения поля (поддерживает и number, и bigint)
       const computeNewValue = (
-        current: number,
+        current: number | bigint,
         update?: { increment?: number; decrement?: number; set?: number },
       ) => {
         if (!update) return undefined;
         if (update.set !== undefined) return update.set;
-        let val = current;
+
+        // Безопасное преобразование bigint в number для вычислений
+        let val = typeof current === 'bigint' ? Number(current) : current;
+
         if (update.increment) val += update.increment;
         if (update.decrement) val -= update.decrement;
         return val;
@@ -60,15 +81,42 @@ export class AnalyticsService {
       return this.prisma.userAnalytics.update({
         where: { userId },
         data: {
-          totalBoards: computeNewValue(currentAnalytics.totalBoards, data.totalBoards),
-          totalColumns: computeNewValue(currentAnalytics.totalColumns, data.totalColumns),
-          totalTasks: computeNewValue(currentAnalytics.totalTasks, data.totalTasks),
-          completedTasks: computeNewValue(currentAnalytics.completedTasks, data.completedTasks),
-          completedTasksTotal: computeNewValue(currentAnalytics.completedTasksTotal, data.completedTasksTotal),
-          inProgressTasks: computeNewValue(currentAnalytics.inProgressTasks, data.inProgressTasks),
-          currentStreak: computeNewValue(currentAnalytics.currentStreak, data.currentStreak),
-          longestStreak: computeNewValue(currentAnalytics.longestStreak, data.longestStreak),
-          totalTimeSpent: computeNewValue(currentAnalytics.totalTimeSpent, data.totalTimeSpent),
+          totalBoards: computeNewValue(
+            currentAnalytics.totalBoards,
+            data.totalBoards,
+          ),
+          totalColumns: computeNewValue(
+            currentAnalytics.totalColumns,
+            data.totalColumns,
+          ),
+          totalTasks: computeNewValue(
+            currentAnalytics.totalTasks,
+            data.totalTasks,
+          ),
+          completedTasks: computeNewValue(
+            currentAnalytics.completedTasks,
+            data.completedTasks,
+          ),
+          completedTasksTotal: computeNewValue(
+            currentAnalytics.completedTasksTotal,
+            data.completedTasksTotal,
+          ),
+          inProgressTasks: computeNewValue(
+            currentAnalytics.inProgressTasks,
+            data.inProgressTasks,
+          ),
+          currentStreak: computeNewValue(
+            currentAnalytics.currentStreak,
+            data.currentStreak,
+          ),
+          longestStreak: computeNewValue(
+            currentAnalytics.longestStreak,
+            data.longestStreak,
+          ),
+          totalTimeSpent: computeNewValue(
+            currentAnalytics.totalTimeSpent,
+            data.totalTimeSpent,
+          ),
           lastHeartbeat: data.lastHeartbeat ?? undefined,
         },
       });
@@ -110,5 +158,29 @@ export class AnalyticsService {
     });
 
     return counts;
+  }
+
+  // Упрощённый метод для обновления аналитики (используется в UserActivityService)
+  async updateAnalyticsCustom(
+    userId: string,
+    data: {
+      totalTimeSpentIncrement?: number;
+      currentStreak?: number;
+      longestStreak?: number;
+      lastHeartbeat?: Date;
+    },
+  ) {
+    return this.updateAnalytics(userId, {
+      totalTimeSpent: data.totalTimeSpentIncrement
+        ? { increment: data.totalTimeSpentIncrement }
+        : undefined,
+      currentStreak: data.currentStreak
+        ? { set: data.currentStreak }
+        : undefined,
+      longestStreak: data.longestStreak
+        ? { set: data.longestStreak }
+        : undefined,
+      lastHeartbeat: data.lastHeartbeat,
+    });
   }
 }
