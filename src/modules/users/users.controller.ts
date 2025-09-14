@@ -197,6 +197,7 @@ export class UsersController {
       throw new BadRequestException('Failed to activate user');
     }
   }
+
   // @AuthProtectedDecorator()
 
   @Delete('cancel-email-change')
@@ -298,7 +299,7 @@ export class UsersController {
   @ApiResponseNotFoundDecorator()
   @ApiResponseInternalServerErrorDecorator()
   async uploadAvatar(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
     @Request() req: RequestWithUser, // assuming user data is in request
   ) {
     // Проверка наличия файла
@@ -335,7 +336,7 @@ export class UsersController {
   @AuthProtectedDecorator()
   @UseInterceptors(FileInterceptor('file'))
   async replaceAvatar(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
     @Request() req: RequestWithUser,
   ) {
     if (!file) {
@@ -446,6 +447,7 @@ export class UsersController {
     }
     return user;
   }
+
   @Get()
   @AuthProtectedDecorator() // если нужен доступ только для авторизованных
   async getAllUsers() {
