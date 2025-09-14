@@ -9,6 +9,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { SearchModule } from './modules/search/search.module';
 import { UserActivityModule } from './modules/user-activity/user-activity.module';
 import { BoardInvitationsModule } from './modules/invitations/invitations.module';
+import { AchievementModule } from './modules/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { BoardInvitationsModule } from './modules/invitations/invitations.module
     SearchModule,
     UserActivityModule,
     BoardInvitationsModule,
+    AchievementModule,
   ],
   controllers: [],
   providers: [],

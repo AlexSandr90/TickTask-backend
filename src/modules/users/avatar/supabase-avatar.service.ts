@@ -9,7 +9,7 @@ export class SupabaseAvatarService {
     fileName: string,
     mimeType: string,
   ): Promise<string> {
-    const contentType = mimeType || 'image/png'; // если mimeType не указан, ставим дефолтный
+    const contentType = mimeType || 'image/achievements'; // если mimeType не указан, ставим дефолтный
 
     const { error } = await supabase.storage
       .from('avatars') // имя вашего бакета в Supabase

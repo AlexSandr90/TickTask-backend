@@ -33,6 +33,7 @@ model User {
   sentInvitations     BoardInvitation[] @relation("InvitationSender")
   boardsMembers       BoardMember[]
   Task                Task[]
+  UserAchievement     UserAchievement[]
   UserAnalytics       UserAnalytics?
 }
 
@@ -125,6 +126,30 @@ model UserAnalytics {
   completedTasksTotal Int       @default(0)
   lastHeartbeat       DateTime?
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AchievementDefinition {
+  id               String            @id @default(uuid())
+  type             String            @unique
+  title            String
+  description      String
+  icon             String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String                @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  achievement   AchievementDefinition @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
 }
 
 enum BoardRole {
