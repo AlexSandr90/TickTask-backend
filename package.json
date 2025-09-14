@@ -9,9 +9,9 @@
     "start:dev": "nodemon --watch src --ext ts --exec \"ts-node -r tsconfig-paths/register src/main.ts\"",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node dist/src/main.js",
+    "start": "node dist/main.js",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/src/main.js",
+    "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -27,7 +27,6 @@
     "start:dev:local": "dotenv -e .env.local -- npm run start:dev"
   },
   "dependencies": {
-    "@nestjs/cli": "^11.0.7",
     "@nestjs/common": "^11.0.20",
     "@nestjs/config": "^4.0.1",
     "@nestjs/core": "^11.0.1",
