@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -10,6 +11,7 @@ import { SearchModule } from './modules/search/search.module';
 import { UserActivityModule } from './modules/user-activity/user-activity.module';
 import { BoardInvitationsModule } from './modules/invitations/invitations.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
+import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
 
 @Module({
   imports: [
@@ -30,6 +32,11 @@ import { AchievementModule } from './modules/achievement/achievement.module';
     AchievementModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: BigIntInterceptor,
+    },
+  ],
 })
 export class AppModule {}
