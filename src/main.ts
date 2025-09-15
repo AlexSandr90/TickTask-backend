@@ -9,8 +9,6 @@ import { GoogleStrategy } from './modules/auth/strategy/google.strategy';
 import passport from 'passport';
 import cookieParser from 'cookie-parser';
 import { AchievementService } from './modules/achievement/achievement.service';
-import { join } from 'path';
-import express from 'express';
 
 dotenv.config();
 
@@ -30,10 +28,7 @@ async function bootstrap() {
   });
   configureHelmet(app);
   app.use(cookieParser());
-  app.use(
-    '/achievements',
-    express.static(join(__dirname, '..', 'public/achievements')),
-  );
+
   const prismaService = app.get(PrismaService);
   const port = process.env.PORT || 3000;
 
