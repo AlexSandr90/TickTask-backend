@@ -4,11 +4,13 @@ export function configureHelmet(app: any) {
   app.use(
     helmet({
       crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
       contentSecurityPolicy: {
         directives: {
-          imgSrc: [`'self'`, 'data:', 'localhost:*'],
-          scriptSrc: [`'self'`, `'unsafe-inline'`, 'localhost:*'],
-          styleSrc: [`'self'`, `'unsafe-inline'`, 'localhost:*'],
+          defaultSrc: [`'self'`],
+          imgSrc: [`'self'`, 'data:', '*'],
+          scriptSrc: [`'self'`, `'unsafe-inline'`],
+          styleSrc: [`'self'`, `'unsafe-inline'`],
         },
       },
     }),
