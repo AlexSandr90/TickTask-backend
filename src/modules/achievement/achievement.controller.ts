@@ -23,6 +23,13 @@ import {
 export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
 
+  // ✅ Новый публичный эндпоинт: получить все достижения, доступные в системе
+  @Get('definitions')
+  @ApiOperation({ summary: 'Get all available achievement definitions' })
+  async getAllDefinitions() {
+    return this.achievementService.getAllAchievementDefinitions();
+  }
+
   // Получить все достижения пользователя
   @Get(':userId')
   @JwtAuthDecorator()
