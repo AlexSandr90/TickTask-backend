@@ -23,25 +23,41 @@ import {
 export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
 
-  // ✅ Новый публичный эндпоинт: получить все достижения, доступные в системе
+  // ✅ Публичный эндпоинт: получить все достижения, доступные в системе
   @Get('definitions')
   @ApiOperation({ summary: 'Get all available achievement definitions' })
   async getAllDefinitions() {
     return this.achievementService.getAllAchievementDefinitions();
   }
 
-  // Получить все достижения пользователя
-  @Get(':userId')
+  // ✅ НОВЫЙ: Получить достижения текущего пользователя
+  @Get('my')
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Get all user achievements' })
-  async getUserAchievements(
-    @Param('userId') userId: string,
+  @ApiOperation({ summary: 'Get my achievements' })
+  async getMyAchievements(
     @CurrentUserDecorator() user: { id: string },
   ): Promise<UserAchievementResponseDto[]> {
-    if (user.id !== userId) {
-      throw new ForbiddenException('Cannot access another user achievements');
-    }
-    return this.achievementService.getUserAchievements(userId);
+    return this.achievementService.getUserAchievements(user.id);
+  }
+
+  // ✅ НОВЫЙ: Разблокировать достижение для текущего пользователя
+  @Post('unlock/:achievementType')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Unlock my achievement' })
+  async unlockMyAchievement(
+    @Param('achievementType') achievementType: string,
+    @CurrentUserDecorator() user: { id: string },
+  ) {
+    const unlocked = await this.achievementService.unlockAchievement(
+      user.id,
+      achievementType,
+    );
+
+    return {
+      userId: user.id,
+      achievementType,
+      unlocked,
+    };
   }
 
   // Создать новое определение достижения
@@ -60,10 +76,24 @@ export class AchievementController {
     return this.achievementService.initializeBasicAchievements();
   }
 
-  // Разблокировка достижения для пользователя
+  // ⚠️ СТАРЫЙ: Получить достижения по userId (оставлен для совместимости)
+  @Get(':userId')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Get user achievements by ID' })
+  async getUserAchievements(
+    @Param('userId') userId: string,
+    @CurrentUserDecorator() user: { id: string },
+  ): Promise<UserAchievementResponseDto[]> {
+    if (user.id !== userId) {
+      throw new ForbiddenException('Cannot access another user achievements');
+    }
+    return this.achievementService.getUserAchievements(userId);
+  }
+
+  // ⚠️ СТАРЫЙ: Разблокировать достижение по userId (оставлен для совместимости)
   @Post('unlock/:userId/:achievementType')
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Unlock an achievement for a user' })
+  @ApiOperation({ summary: 'Unlock achievement for specific user' })
   async unlockAchievement(
     @Param('userId') userId: string,
     @Param('achievementType') achievementType: string,
