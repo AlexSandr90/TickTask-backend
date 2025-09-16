@@ -4,7 +4,7 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { createReadStream } from 'fs';
 
-@Controller('achievements')
+@Controller('achievements/static')
 export class AchievementsStaticController {
   @Get(':filename')
   serveAchievementImage(
@@ -30,7 +30,7 @@ export class AchievementsStaticController {
         'public/achievements',
         filename,
       );
-
+      console.log('Serving file:', filePath);
       // Проверяем существование файла
       if (!existsSync(filePath)) {
         throw new NotFoundException('Achievement image not found');
