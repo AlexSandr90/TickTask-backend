@@ -4,6 +4,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
 import { Task } from '@prisma/client';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { AchievementsService } from '../achievement/achievement.service';
 
 type AnalyticsUpdate = {
   totalBoards?: { increment?: number; decrement?: number; set?: number };
@@ -26,6 +27,7 @@ export class TasksService {
   constructor(
     private readonly tasksRepository: TasksRepository,
     private readonly analyticsService: AnalyticsService,
+    private readonly achievementsService: AchievementsService, // ✅ добавлено
   ) {}
 
   async getAllTasks(columnId: string, position: 'asc' | 'desc' = 'asc') {
@@ -57,6 +59,8 @@ export class TasksService {
       totalTasks: { increment: 1 },
       inProgressTasks: { increment: 1 },
     });
+
+    await this.achievementsService.checkFirstTaskAchievement(userId);
 
     return task;
   }

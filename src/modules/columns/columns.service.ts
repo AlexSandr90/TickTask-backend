@@ -29,7 +29,10 @@ export class ColumnsService {
     }
 
     // Создаём колонку
-    const column = await this.columnRepository.create({ title, boardId });
+    const column = await this.columnRepository.create(
+      { title, boardId }, // CreateColumnDto
+      userId, // отдельный аргумент
+    );
 
     // Обновляем аналитику пользователя (увеличиваем количество колонок)
     await this.analyticsService.updateAnalytics(userId, {
@@ -38,6 +41,7 @@ export class ColumnsService {
 
     return column;
   }
+
   async updateColumn(id: string, title?: string, position?: number) {
     const updatedColumn = await this.columnRepository.update(id, {
       title,

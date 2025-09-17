@@ -1,14 +1,15 @@
 // src/services/achievement.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   AchievementDefinitionDto,
   CreateAchievementDefinitionDto,
+  InitializeAchievementsResponseDto,
   UserAchievementResponseDto,
 } from './achievement.dto';
 
 @Injectable()
-export class AchievementService {
+export class AchievementsService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
 
   // Создание определения достижения
@@ -141,7 +142,7 @@ export class AchievementService {
     });
 
     if (columnCount === 1) {
-      await this.unlockAchievement(userId, 'first-colum');
+      await this.unlockAchievement(userId, 'first-column');
     }
   }
 
@@ -177,79 +178,96 @@ export class AchievementService {
   }
 
   // Инициализация базовых достижений (вызывать при запуске приложения)
-  async initializeBasicAchievements(): Promise<{
-    message: string;
-    count: number;
-  }> {
+  async onModuleInit() {
+    await this.initializeBasicAchievements();
+  }
+
+  public async initializeBasicAchievements(): Promise<InitializeAchievementsResponseDto> {
+    const supabaseBaseUrl = process.env.SUPABASE_ACHIEVEMENTS_URL;
+
     const basicAchievements = [
       {
         type: 'first-board',
         title: 'Первая доска',
         description: 'Создайте свою первую доску',
-        icon: '/achievements/bord.png',
+        icon: `${supabaseBaseUrl}/first-board.png`,
       },
       {
-        type: 'first-colum',
+        type: 'first-column',
         title: 'Первая колонка',
-        description: 'Создайте свою первую задачу',
-        icon: '/achievements/colum.png',
+        description: 'Добавьте первую колонку',
+        icon: `${supabaseBaseUrl}/first-column.png`,
+      },
+      {
+        type: 'first-task',
+        title: 'Первая карточка',
+        description: 'Создайте свою первую карточку',
+        icon: `${supabaseBaseUrl}/first-task.png`,
+      },
+      {
+        type: 'five-minutes',
+        title: 'Первые 5 минут',
+        description: 'Проведите 5 минут в приложении',
+        icon: `${supabaseBaseUrl}/five-minutes.png`,
       },
       {
         type: 'streak-3-days',
-        title: 'Трёхдневный стрик',
-        description: 'Заходите в приложение 3 дня подряд',
-        icon: '/icons/streak-3.svg',
+        title: 'Серия 3 дня',
+        description: 'Используйте приложение 3 дня подряд',
+        icon: `${supabaseBaseUrl}/streak-3-days.png`,
       },
       {
         type: 'streak-5-days',
-        title: 'Пятидневный стрик',
-        description: 'Заходите в приложение 5 дней подряд',
-        icon: '/icons/streak-5.svg',
+        title: 'Серия 5 дней',
+        description: 'Используйте приложение 5 дней подряд',
+        icon: `${supabaseBaseUrl}/streak-5-days.png`,
       },
       {
         type: 'streak-week',
         title: 'Неделя подряд',
         description: 'Заходите в приложение неделю подряд',
-        icon: '/icons/streak-week.svg',
+        icon: `${supabaseBaseUrl}/streak-week.png`,
       },
       {
         type: 'streak-2-weeks',
         title: 'Две недели подряд',
         description: 'Заходите в приложение 2 недели подряд',
-        icon: '/icons/streak-2weeks.svg',
+        icon: `${supabaseBaseUrl}/streak-2-weeks.png`,
       },
       {
         type: 'streak-month',
         title: 'Месяц подряд',
         description: 'Заходите в приложение месяц подряд',
-        icon: '/icons/streak-month.svg',
+        icon: `${supabaseBaseUrl}/streak-month.png`,
       },
     ];
 
-    let processedCount = 0;
+    const typesToKeep = basicAchievements.map((a) => a.type);
 
+    // Удаляем все, чего нет в актуальном списке
+    await this.prisma.achievementDefinition.deleteMany({
+      where: { type: { notIn: typesToKeep } },
+    });
+
+    // Обновляем или создаем актуальные достижения
+    let processedCount = 0;
     for (const achievement of basicAchievements) {
-      try {
-        await this.prisma.achievementDefinition.upsert({
+      const existing = await this.prisma.achievementDefinition.findUnique({
+        where: { type: achievement.type },
+      });
+      if (existing) {
+        await this.prisma.achievementDefinition.update({
           where: { type: achievement.type },
-          update: {
-            title: achievement.title,
-            description: achievement.description,
-            icon: achievement.icon,
-          },
-          create: achievement,
+          data: achievement,
         });
-        processedCount++;
-      } catch (error) {
-        console.warn(
-          `Ошибка при обработке достижения ${achievement.type}:`,
-          error instanceof Error ? error.message : error,
-        );
+      } else {
+        await this.prisma.achievementDefinition.create({ data: achievement });
       }
+      processedCount++;
     }
 
     return {
-      message: 'Базовые достижения успешно инициализированы/обновлены',
+      message: 'Базовые достижения успешно синхронизированы',
       count: processedCount,
     };
   }

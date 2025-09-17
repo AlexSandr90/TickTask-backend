@@ -8,7 +8,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GoogleStrategy } from './modules/auth/strategy/google.strategy';
 import passport from 'passport';
 import cookieParser from 'cookie-parser';
-import { AchievementService } from './modules/achievement/achievement.service';
 
 dotenv.config();
 
@@ -22,10 +21,11 @@ async function bootstrap() {
       'http://localhost:4200',
       'https://dea2442ec9a0.ngrok-free.app',
     ],
-    methods: 'GET,POST,PUT,DELETE,OPTIONS, PATCH', // Разрешаем только GET, POST, PUT, DELETE методы
-    allowedHeaders: 'Content-Type, Authorization', // Разрешаем только заголовки Content-Type и Authorization
-    credentials: true, // Разрешаем отправку cookies
+    methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
+    allowedHeaders: 'Content-Type, Authorization',
+    credentials: true,
   });
+
   configureHelmet(app);
   app.use(cookieParser());
 
@@ -50,11 +50,10 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
-      skipMissingProperties: false, // по умолчанию false — и это ок
+      skipMissingProperties: false,
     }),
   );
-  const achievementService = app.get(AchievementService);
-  await achievementService.initializeBasicAchievements();
+
   await app.listen(port);
   console.log(`[bootstrap] server is running on a port: ${port}`);
 }
