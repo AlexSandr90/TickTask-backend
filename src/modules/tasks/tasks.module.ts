@@ -6,9 +6,10 @@ import { TasksRepository } from './tasks.repository';
 import { TaskSearchController } from './task-search.controller';
 import { TasksPositionsController } from './tasks-positions.controller';
 import { AnalyticsModule } from '../analytics/analystics.module';
+import { AchievementModule } from '../achievement/achievement.module';
 
 @Module({
-  imports: [PrismaModule, AnalyticsModule],
+  imports: [PrismaModule, AnalyticsModule, AchievementModule],
   controllers: [
     TasksPositionsController,
     TasksController,

@@ -4,10 +4,14 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { getNextPosition } from '../../common/utils/position.util';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
 import { Task } from '@prisma/client';
+import { AchievementsService } from '../achievement/achievement.service';
 
 @Injectable()
 export class TasksRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly achievementsService: AchievementsService,
+  ) {}
 
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
@@ -29,7 +33,7 @@ export class TasksRepository {
       columnId: taskData.columnId,
     });
 
-    return this.prisma.task.create({
+    const task = await this.prisma.task.create({
       data: {
         title: taskData.title,
         description: taskData.description,
@@ -39,8 +43,23 @@ export class TasksRepository {
         userId: taskData.userId ?? null,
         columnId: taskData.columnId,
       },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarPath: true,
+          },
+        },
+      },
     });
+
+    // ✅ Проверяем достижение после создания
+    if (task.userId) {
+      await this.achievementsService.checkFirstTaskAchievement(task.userId);
+    }
+
+    return task;
   }
 
   async update(
@@ -60,7 +79,15 @@ export class TasksRepository {
     return this.prisma.task.update({
       where: { id },
       data,
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarPath: true,
+          },
+        },
+      },
     });
   }
 

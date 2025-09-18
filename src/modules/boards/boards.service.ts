@@ -8,7 +8,8 @@ import { CreateBoardDto } from './dto/create-board.dto';
 import { getNextPosition } from '../../common/utils/position.util';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
-import { AchievementService } from '../achievement/achievement.service';
+import { AchievementsService } from '../achievement/achievement.service';
+
 
 @Injectable()
 export class BoardsService {
@@ -16,7 +17,7 @@ export class BoardsService {
     private readonly boardsRepository: BoardsRepository,
     private readonly analyticsService: AnalyticsService,
     private readonly prisma: PrismaService, // внедряем PrismaService
-    private readonly achievementService: AchievementService,
+    private readonly achievementService: AchievementsService,
   ) {}
 
   async getAllBoards(userId: string) {
