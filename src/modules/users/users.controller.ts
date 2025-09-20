@@ -72,17 +72,16 @@ export class UsersController {
   @ApiResponseInternalServerErrorDecorator()
   async getProfile(@Request() req: RequestWithUser) {
     const email = req.user?.email;
-
     if (!email) {
       throw new BadRequestException('Email address not found in token');
     }
 
-    const user = await this.usersService.getUserWithAvatarUrl(email); // <--- ВОТ ЭТО
+    const user = await this.usersService.getUserWithAvatarUrl(email);
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    return user; // refreshToken и пароль уже отброшены в сервисе
+    return user;
   }
 
   @Get('timezones')

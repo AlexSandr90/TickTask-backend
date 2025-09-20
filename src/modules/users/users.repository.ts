@@ -21,6 +21,58 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  async findUserByEmailWithRelations(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        boards: true, // Дошки, які створив користувач
+        receivedInvitations: {
+          // Запрошення, які отримав
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        sentInvitations: {
+          // Запрошення, які надіслав
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        boardsMembers: {
+          // Членство в дошках
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        UserAchievement: {
+          // Досягнення
+          include: {
+            // achievement: true,        // Якщо є модель Achievement
+          },
+        },
+        UserAnalytics: true, // Аналітика
+      },
+    });
+  }
+
   async findSafeUserByEmail(email: string) {
     const user = await this.findByEmail(email);
 
