@@ -3,6 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import dayjs from 'dayjs';
 import { UserActivityDto } from './dto/user-activiti.dto';
+import { AchievementsService } from '../achievement/achievement.service';
 
 interface MotivationalMessage {
   emoji: string;
@@ -14,6 +15,7 @@ export class UserActivityService {
   constructor(
     private prisma: PrismaService,
     private analyticsService: AnalyticsService,
+    private achievementsService: AchievementsService,
   ) {}
 
   private formatTimeSpent(seconds: number): string {
@@ -38,32 +40,17 @@ export class UserActivityService {
     return [hoursStr, minsStr, secsStr].filter(Boolean).join(' ');
   }
 
-  /**
-   * Генерирует мотивационное сообщение на основе общего времени в минутах
-   * Теперь логика находится на сервере для безопасности
-   */
   private getMotivationalMessage(totalMinutes: number): MotivationalMessage {
     const totalHours = Math.floor(totalMinutes / 60);
 
-    if (totalHours < 1) {
-      return { emoji: '🌱', text: 'Только начинаете!' };
-    }
-    if (totalHours < 10) {
-      return { emoji: '🚀', text: 'Набираете обороты!' };
-    }
-    if (totalHours < 50) {
-      return { emoji: '🔥', text: 'Горите! Продолжайте!' };
-    }
-    if (totalHours < 100) {
+    if (totalHours < 1) return { emoji: '🌱', text: 'Только начинаете!' };
+    if (totalHours < 10) return { emoji: '🚀', text: 'Набираете обороты!' };
+    if (totalHours < 50) return { emoji: '🔥', text: 'Горите! Продолжайте!' };
+    if (totalHours < 100)
       return { emoji: '💪', text: 'Невероятная преданность!' };
-    }
     return { emoji: '👑', text: 'Вы настоящий мастер!' };
   }
 
-  /**
-   * Вычисляет разбивку времени на годы, месяцы, дни, часы, минуты
-   * Перенесено с фронта для консистентности данных
-   */
   private calculateTimeBreakdown(totalMinutes: number) {
     let remainingMinutes = totalMinutes;
 
@@ -140,7 +127,7 @@ export class UserActivityService {
         },
       });
 
-      // ===== Обновление аналитики =====
+      // ===== Update analytics =====
       const updatedAnalytics =
         await this.analyticsService.updateAnalyticsCustom(userId, {
           totalTimeSpentIncrement: secondsToAdd > 0 ? secondsToAdd : undefined,
@@ -149,10 +136,23 @@ export class UserActivityService {
           lastHeartbeat: secondsToAdd > 0 ? now : undefined,
         });
 
-      // ===== Convert BigInt to number safely =====
       const totalTimeSpentNumber = Number(updatedAnalytics.totalTimeSpent);
 
-      // ===== Вычисляем мотивационное сообщение и разбивку времени =====
+      // ===== Achievements: 5 minutes =====
+      if (totalTimeSpentNumber >= 5 * 60) {
+        await this.achievementsService.unlockAchievement(
+          userId,
+          'five-minutes',
+        );
+      }
+
+      // ===== Achievements: Streaks =====
+      await this.achievementsService.checkStreakAchievements(
+        userId,
+        newCurrentStreak,
+      );
+
+      // ===== Motivation and time breakdown =====
       const totalMinutes = Math.floor(totalTimeSpentNumber / 60);
       const motivationalMessage = this.getMotivationalMessage(totalMinutes);
       const timeBreakdown = this.calculateTimeBreakdown(totalMinutes);
@@ -163,7 +163,6 @@ export class UserActivityService {
         currentStreak: updatedAnalytics.currentStreak,
         longestStreak: updatedAnalytics.longestStreak,
         lastHeartbeat: updatedAnalytics.lastHeartbeat ?? undefined,
-        // ===== Новые поля для фронтенда =====
         motivationalMessage,
         timeBreakdown,
         totalHours: Math.floor(totalMinutes / 60),
@@ -175,5 +174,30 @@ export class UserActivityService {
       if (err instanceof Error) throw err;
       throw new Error('Unknown error updating user activity');
     }
+  }
+
+  async getUserActivityStatus(userId: string): Promise<UserActivityDto> {
+    const analytics = await this.prisma.userAnalytics.findUnique({
+      where: { userId },
+    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!analytics || !user) throw new Error('User or analytics not found');
+
+    const totalMinutes = Math.floor(Number(analytics.totalTimeSpent) / 60);
+
+    return {
+      currentStreak: user.currentStreak,
+      longestStreak: user.longestStreak,
+      totalTimeSpent: Number(analytics.totalTimeSpent),
+      totalTimeSpentFormatted: this.formatTimeSpent(
+        Number(analytics.totalTimeSpent),
+      ),
+      motivationalMessage: this.getMotivationalMessage(totalMinutes),
+      timeBreakdown: this.calculateTimeBreakdown(totalMinutes),
+      totalHours: Math.floor(totalMinutes / 60), // добавлено
+      totalMinutes, // добавлено
+      lastHeartbeat: analytics.lastHeartbeat ?? undefined, // если нужно
+    };
   }
 }

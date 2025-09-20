@@ -1,4 +1,3 @@
-// src/services/achievement.service.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
@@ -88,6 +87,30 @@ export class AchievementsService implements OnModuleInit {
       console.error('Error unlocking achievement:', error);
       return false;
     }
+  }
+
+  // 🔥 Новый метод — проверка, есть ли у пользователя ачивка
+  async hasAchievement(
+    userId: string,
+    achievementType: string,
+  ): Promise<boolean> {
+    const achievementDefinition =
+      await this.prisma.achievementDefinition.findUnique({
+        where: { type: achievementType },
+      });
+
+    if (!achievementDefinition) return false;
+
+    const existing = await this.prisma.userAchievement.findUnique({
+      where: {
+        userId_achievementId: {
+          userId,
+          achievementId: achievementDefinition.id,
+        },
+      },
+    });
+
+    return !!existing;
   }
 
   // Получение всех достижений пользователя
