@@ -334,7 +334,7 @@ export class UsersService {
   }
 
   async getUserWithAvatarUrl(email: string) {
-    const user = await this.usersRepository.findByEmail(email);
+    const user = await this.usersRepository.findUserByEmailWithRelations(email);
     if (!user) throw new NotFoundException('User not found');
 
     const avatarUrl = user.avatarPath
