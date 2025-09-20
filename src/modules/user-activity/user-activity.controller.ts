@@ -1,20 +1,21 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
-  Controller,
-  Post,
-  Param,
-  Body,
-  ForbiddenException,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
   ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { IsOptional, IsInt, Min } from 'class-validator';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  InternalServerErrorException,
+  Param,
+  Post,
+} from '@nestjs/common';
+import { IsInt, IsOptional, Min } from 'class-validator';
 import { UserActivityService } from './user-activity.service';
 import { JwtAuthDecorator } from '../../common/decorators/jwt.auth.decorator';
 import { CurrentUserDecorator } from '../../common/decorators/current-user.decorator';
@@ -121,11 +122,10 @@ export class UserActivityController {
     }
 
     try {
-      const updatedActivity = await this.activityService.updateUserActivity(
+      return await this.activityService.updateUserActivity(
         userId,
         body.secondsToAdd ?? 0, // передаем в сервис
       );
-      return updatedActivity;
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException(
@@ -134,5 +134,28 @@ export class UserActivityController {
       }
       throw new InternalServerErrorException('Unknown error updating activity');
     }
+  }
+
+  @Get('status/:userId')
+  @JwtAuthDecorator()
+  @ApiOperation({
+    summary: 'Получить текущую мотивацию и статус пользователя',
+    description:
+      'Возвращает текущую мотивацию (emoji + текст), текущий streak и общее время без изменения данных.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID пользователя',
+    example: '614e57b4-16f8-49a9-a225-631ffae01370',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Статус пользователя успешно получен',
+    type: UserActivityDto, // <-- используем готовый DTO
+  })
+  async getUserStatus(
+    @CurrentUserDecorator() user: { id: string },
+  ): Promise<UserActivityDto> {
+    return await this.activityService.getUserActivityStatus(user.id); // activity уже соответствует структуре UserActivityDto
   }
 }
