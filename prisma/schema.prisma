@@ -52,14 +52,15 @@ model Board {
 }
 
 model BoardMember {
-  id      String    @id @default(uuid())
-  boardId String
-  userId  String
-  role    BoardRole @default(USER)
-  addedAt DateTime  @default(now())
-  addedBy String?
-  board   Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String    @id @default(uuid())
+  boardId  String
+  userId   String
+  role     BoardRole @default(USER)
+  addedAt  DateTime  @default(now())
+  position Int       @default(0)
+  addedBy  String?
+  board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, userId])
 }

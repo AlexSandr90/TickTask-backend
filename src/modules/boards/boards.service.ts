@@ -1,7 +1,7 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { BoardsRepository } from './boards.repository';
 import { CreateBoardDto } from './dto/create-board.dto';
@@ -9,7 +9,6 @@ import { getNextPosition } from '../../common/utils/position.util';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { AchievementsService } from '../achievement/achievement.service';
-
 
 @Injectable()
 export class BoardsService {
@@ -22,6 +21,26 @@ export class BoardsService {
 
   async getAllBoards(userId: string) {
     return this.boardsRepository.findAll(userId, 'asc'); // сортировка по position
+  }
+
+  async getBoardsInBoardsMembers(userId: string) {
+    return this.boardsRepository.findAllBoardsMembers(userId);
+  }
+
+  async getBoardsByEmailWithRelations(email: string) {
+    const user = await this.boardsRepository.findByEmailWithRelations(email);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const { boards, receivedInvitations, sentInvitations, boardsMembers } =
+      user;
+
+    return {
+      boards,
+      receivedInvitations,
+      sentInvitations,
+      boardsMembers,
+    };
   }
 
   async findBoardById(id: string, userId: string) {

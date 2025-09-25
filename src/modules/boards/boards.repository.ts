@@ -3,6 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { getNextPosition } from '../../common/utils/position.util';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class BoardsRepository {
@@ -12,6 +13,104 @@ export class BoardsRepository {
     return this.prisma.board.findMany({
       where: { userId },
       orderBy: { position },
+    });
+  }
+
+  async findAllBoardsMembers(userId: string) {
+    return this.prisma.boardMember.findMany({
+      where: { userId },
+      // orderBy: { position },
+    });
+  }
+
+  async findByEmailWithRelations(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        boards: true,
+        receivedInvitations: {
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        sentInvitations: {
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        boardsMembers: {
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        },
+        UserAchievement: {
+          include: {
+            // achievement: true,
+          },
+        },
+        UserAnalytics: true,
+      },
+    });
+  }
+
+  async findByEmailWithBoardAccess(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        boards: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            createdAt: true,
+          },
+        },
+        boardsMembers: {
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+        receivedInvitations: {
+          where: {
+            status: 'ACCEPTED', // Тільки прийняті запрошення
+          },
+          include: {
+            board: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
