@@ -68,8 +68,11 @@ export class BoardsController {
   @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
   @ApiResponseNotFoundDecorator('Boards not found')
   @ApiResponseInternalServerErrorDecorator()
-  async getBoardsInBoardsMembers(@CurrentUserDecorator() user) {
-    return this.boardsService.getBoardsInBoardsMembers(user.id);
+  async getBoardsInBoardsMembers(
+    @CurrentUserDecorator() user,
+    @Query('position') position: 'asc' | 'desc' = 'asc',
+  ) {
+    return this.boardsService.getBoardsInBoardsMembers(user.id, position);
   }
 
   @Get('boards-with-relations')
@@ -91,8 +94,6 @@ export class BoardsController {
   async getBoardsByEmailWithRelations(@CurrentUserDecorator() user) {
     return this.boardsService.getBoardsByEmailWithRelations(user.email);
   }
-
-
 
   @Get('search')
   @JwtAuthDecorator()
