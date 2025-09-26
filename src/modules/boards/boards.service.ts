@@ -23,8 +23,8 @@ export class BoardsService {
     return this.boardsRepository.findAll(userId, 'asc'); // сортировка по position
   }
 
-  async getBoardsInBoardsMembers(userId: string) {
-    return this.boardsRepository.findAllBoardsMembers(userId);
+  async getBoardsInBoardsMembers(userId: string, position: 'asc' | 'desc' = 'asc') {
+    return this.boardsRepository.findAllBoardsMembers(userId, position);
   }
 
   async getBoardsByEmailWithRelations(email: string) {

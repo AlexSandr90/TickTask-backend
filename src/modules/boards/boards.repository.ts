@@ -16,10 +16,19 @@ export class BoardsRepository {
     });
   }
 
-  async findAllBoardsMembers(userId: string) {
+  async findAllBoardsMembers(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.boardMember.findMany({
       where: { userId },
-      // orderBy: { position },
+      orderBy: { position },
+      include: {
+        board: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+          },
+        },
+      },
     });
   }
 
