@@ -60,7 +60,7 @@ export class AchievementController {
 
   @Post('initialize')
   @JwtAuthDecorator()
-  @ApiOperation({ summary: 'Initialize basic achievements' })
+  @ApiOperation({ summary: 'Initialize basic achievement' })
   async initializeBasics(): Promise<InitializeAchievementsResponseDto> {
     return this.achievementService.initializeBasicAchievements();
   }
