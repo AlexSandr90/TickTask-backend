@@ -115,7 +115,7 @@ export class AuthService {
     }
 
     const resetToken = randomBytes(32).toString('hex');
-    const resetLink = `${APP_CONFIG.baseUrl}/reset-password?token=${resetToken}`;
+    const resetLink = `${APP_CONFIG.baseUrl}/auth/reset-password?token=${resetToken}`;
 
     await this.usersRepository.updatePasswordResetToken(user.id, resetToken);
 
