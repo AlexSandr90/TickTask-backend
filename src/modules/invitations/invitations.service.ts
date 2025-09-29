@@ -26,6 +26,11 @@ export class BoardInvitationsService {
     senderId: string,
     inviteDto: InviteUserToBoardDto,
   ) {
+    console.log('=== INVITE START ===');
+    console.log('boardId:', boardId);
+    console.log('senderId:', senderId);
+    console.log('inviteDto:', inviteDto);
+
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
       include: {
@@ -36,13 +41,25 @@ export class BoardInvitationsService {
       },
     });
 
+    console.log('=== BOARD DATA ===');
+    console.log('board:', board);
+    console.log('board.userId:', board?.userId);
+    console.log('senderId:', senderId);
+    console.log('board.members:', board?.members);
+
     if (!board) {
+      console.log('Board not found!');
       throw new NotFoundException('Board not found');
     }
 
     const isOwner = board.userId === senderId;
     const memberRole = board.members[0]?.role;
     const canInvite = isOwner || memberRole === BoardRole.ADMIN;
+
+    console.log('=== PERMISSIONS ===');
+    console.log('isOwner:', isOwner);
+    console.log('memberRole:', memberRole);
+    console.log('canInvite:', canInvite);
 
     if (!canInvite) {
       throw new ForbiddenException(
