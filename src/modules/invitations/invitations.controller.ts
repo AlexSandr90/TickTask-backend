@@ -52,6 +52,9 @@ export class BoardInvitationsController {
     @Body() inviteDto: InviteUserToBoardDto,
     @Request() req: any,
   ) {
+    console.log('boardId controller: ', boardId);
+    console.log('inviteDto controller: ', inviteDto);
+    console.log('req.user controller: ', req.user);
     return this.boardInvitationsService.inviteUserToBoard(
       boardId,
       req.user.id,
