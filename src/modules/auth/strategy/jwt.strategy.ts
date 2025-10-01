@@ -17,10 +17,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    console.log('=== JWT VALIDATE ===');
+    console.log('payload:', payload);
+    console.log('payload.email:', payload?.email);
+
     try {
       const user = await this.usersService.findByEmail(payload.email);
+      console.log('user found:', !!user);
 
       if (!user) {
+        console.log('USER NOT FOUND IN DB');
         throw new UnauthorizedException('User not found');
       }
 
