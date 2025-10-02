@@ -62,7 +62,7 @@ export class AuthService {
     this.userBusinessValidator.setAuthCookies(res, accessToken, refreshToken);
     res
       .status(HttpStatus.OK)
-      .json({ message: 'Successfully logged in', access_token: accessToken });
+      .json({ message: 'Successfully logged in!', access_token: accessToken });
     return;
   }
 
