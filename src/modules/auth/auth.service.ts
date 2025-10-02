@@ -60,7 +60,9 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
     this.userBusinessValidator.setAuthCookies(res, accessToken, refreshToken);
-    res.status(HttpStatus.OK).json({ message: 'Successfully logged in' });
+    res
+      .status(HttpStatus.OK)
+      .json({ message: 'Successfully logged in', access_token: accessToken });
     return;
   }
 
