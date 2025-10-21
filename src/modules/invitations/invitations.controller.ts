@@ -124,7 +124,7 @@ export class BoardInvitationsController {
     return this.boardInvitationsService.getSentInvitation(req.user.id);
   }
 
-  @Patch('invitations/:invitationId/respond')
+  @Patch('invitations/accept/:invitationId/')
   @JwtAuthDecorator()
   @ApiOperation({
     summary: 'Send an invitation to a user to join a board',
