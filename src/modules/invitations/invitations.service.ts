@@ -249,7 +249,7 @@ export class BoardInvitationsService {
   async respondToInvitation(
     invitationId: string,
     userId: string,
-    responseDto: RespondToInvitationDto,
+    accept: boolean,
   ) {
     const invitation = await this.prisma.boardInvitation.findUnique({
       where: { id: invitationId },
@@ -286,7 +286,7 @@ export class BoardInvitationsService {
       throw new BadRequestException('Invitation has expired');
     }
 
-    if (responseDto.accept) {
+    if (accept) {
       await this.prisma.$transaction(async (tx) => {
         await tx.boardMember.create({
           data: {
@@ -323,7 +323,7 @@ export class BoardInvitationsService {
   async respondToInvitationByToken(
     token: string,
     userId: string,
-    responseDto: RespondToInvitationDto,
+    accept: boolean,
   ) {
     const invitation = await this.prisma.boardInvitation.findUnique({
       where: { token },
@@ -333,7 +333,7 @@ export class BoardInvitationsService {
       throw new NotFoundException('Invitation not found');
     }
 
-    return this.respondToInvitation(invitation.id, userId, responseDto);
+    return this.respondToInvitation(invitation.id, userId, accept);
   }
 
   async getBoardMembers(boardId: string, requestId: string) {

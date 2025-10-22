@@ -124,36 +124,7 @@ export class BoardInvitationsController {
     return this.boardInvitationsService.getSentInvitation(req.user.id);
   }
 
-  @Patch('invitations/accept/:invitationId/')
-  @JwtAuthDecorator()
-  @ApiOperation({
-    summary: 'Send an invitation to a user to join a board',
-    description: 'Send an invitation to a user to join a board',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'The user was invited to the board',
-  })
-  @ApiResponseBadRequestDecorator(
-    'Bad Request – Invalid board ID or missing param',
-  )
-  @ApiResponseUnauthorizedDecorator()
-  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
-  @ApiResponseNotFoundDecorator('Boards not found')
-  @ApiResponseInternalServerErrorDecorator()
-  async respondToInvitation(
-    @Param('invitationId') invitationId: string,
-    @Body() responseDto: RespondToInvitationDto,
-    @Request() req: any,
-  ) {
-    return this.boardInvitationsService.respondToInvitation(
-      invitationId,
-      req.user.id,
-      responseDto,
-    );
-  }
-
-  @Post('invitations/respond-by-token')
+  @Get('accept/:token')
   @JwtAuthDecorator()
   @ApiOperation({
     summary: 'Send an invitation to a user to join a board',
@@ -171,14 +142,41 @@ export class BoardInvitationsController {
   @ApiResponseNotFoundDecorator('Boards not found')
   @ApiResponseInternalServerErrorDecorator()
   async respondToInvitationByToken(
-    @Query('token') token: string,
-    @Body() responseDto: RespondToInvitationDto,
+    @Param('token') token: string,
     @Request() req: any,
   ) {
     return this.boardInvitationsService.respondToInvitationByToken(
       token,
       req.user.id,
-      responseDto,
+      true,
+    );
+  }
+
+  @Get('decline/:token')
+  @JwtAuthDecorator()
+  @ApiOperation({
+    summary: 'Send an invitation to a user to join a board',
+    description: 'Send an invitation to a user to join a board',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The user was invited to the board',
+  })
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid board ID or missing param',
+  )
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
+  @ApiResponseNotFoundDecorator('Boards not found')
+  @ApiResponseInternalServerErrorDecorator()
+  async declineInvitationByToken(
+    @Param('token') token: string,
+    @Request() req: any,
+  ) {
+    return this.boardInvitationsService.respondToInvitationByToken(
+      token,
+      req.user.id,
+      false, // decline
     );
   }
 
