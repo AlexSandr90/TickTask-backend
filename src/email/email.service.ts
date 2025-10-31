@@ -196,8 +196,9 @@ export class EmailService {
 
   async sendBoardInvitation(data: BoardInvitationData): Promise<void> {
     const { to, boardTitle, invitationToken, expiresAt, senderName } = data;
+
     const baseUrl = APP_CONFIG.baseUrl || 'http://localhost:3000';
-    const invitationUrl = `${baseUrl}/board-invitation?token=${invitationToken}`;
+    const invitationUrl = `${baseUrl}/board-invitation/${invitationToken}`;
 
     const expiresFormatted = expiresAt.toLocaleString('uk-UA', {
       year: 'numeric',
