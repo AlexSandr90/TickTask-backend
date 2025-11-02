@@ -37,7 +37,6 @@ export class BoardInvitationsService {
     });
 
     if (!board) {
-      console.log('Board not found!');
       throw new NotFoundException('Board not found');
     }
 

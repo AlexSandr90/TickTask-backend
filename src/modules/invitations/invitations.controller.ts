@@ -52,9 +52,6 @@ export class BoardInvitationsController {
     @Body() inviteDto: InviteUserToBoardDto,
     @Request() req: any,
   ) {
-    console.log('boardId controller: ', boardId);
-    console.log('inviteDto controller: ', inviteDto);
-    console.log('req.user controller: ', req.user);
     return this.boardInvitationsService.inviteUserToBoard(
       boardId,
       req.user.id,
@@ -80,7 +77,6 @@ export class BoardInvitationsController {
   @ApiResponseNotFoundDecorator('Boards not found')
   @ApiResponseInternalServerErrorDecorator()
   async getUserInvitations(@Request() req: any) {
-    console.log('request: ', req.user);
     return this.boardInvitationsService.getReceivedInvitations(req.user.id);
   }
 
