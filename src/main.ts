@@ -17,7 +17,9 @@ async function bootstrap() {
     origin: [
       'https://taskcraft.click',
       'https://localhost:3000',
+      'https://localhost:3001',
       'http://localhost:3000',
+      'http://localhost:3001',
       'http://localhost:4200',
       'https://dea2442ec9a0.ngrok-free.app',
     ],

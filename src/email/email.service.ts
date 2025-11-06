@@ -198,7 +198,7 @@ export class EmailService {
     const { to, boardTitle, invitationToken, expiresAt, senderName } = data;
 
     const baseUrl = APP_CONFIG.baseUrl || 'http://localhost:3000';
-    const invitationUrl = `${baseUrl}/board-invitation/${invitationToken}`;
+    const invitationUrl = `${baseUrl}/boards-invitations/accept/${invitationToken}`;
 
     const expiresFormatted = expiresAt.toLocaleString('uk-UA', {
       year: 'numeric',
