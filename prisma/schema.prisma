@@ -49,6 +49,8 @@ model Board {
   invitations BoardInvitation[]
   members     BoardMember[]
   columns     Column[]
+
+  @@index([userId]) // Индекс для быстрого поиска досок конкретного пользователя
 }
 
 model BoardMember {
@@ -63,6 +65,7 @@ model BoardMember {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, userId])
+  @@index([userId]) // Добавлен для ускорения запросов "Найти все доски, где пользователь является участником"
 }
 
 model BoardInvitation {
@@ -81,6 +84,8 @@ model BoardInvitation {
   sender     User             @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, email])
+  @@index([receiverId]) // Добавлен для ускорения запросов "Найти все приглашения для этого пользователя"
+  @@index([senderId]) // Добавлен для ускорения запросов "Найти все приглашения, отправленные этим пользователем"
 }
 
 model Column {
@@ -109,6 +114,11 @@ model Task {
   isCompleted Boolean   @default(false)
   column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
   user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([columnId]) // Добавлен для запроса задач в конкретной колонке (GET /tasks?columnId=...)
+  @@index([userId]) // Добавлен для запроса задач конкретного пользователя
+  @@index([columnId, userId]) // Добавлен для составного поиска (задачи пользователя в колонке)
+  @@index([isCompleted]) // Добавлен для фильтрации по статусу завершения
 }
 
 model UserAnalytics {
