@@ -37,7 +37,7 @@
     "@nestjs/platform-express": "^11.0.20",
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^11.0.7",
-    "@prisma/client": "^6.13.0",
+    "@prisma/client": "^6.19.0",
     "@supabase/supabase-js": "^2.49.4",
     "@types/passport-google-oauth20": "^2.0.16",
     "bcrypt": "^5.1.1",
