@@ -81,7 +81,9 @@ export class ColumnsRepository {
       },
     });
     if (userId) {
-      await this.achievementsService.checkFirstColumnAchievement(userId);
+      this.achievementsService
+        .checkFirstColumnAchievement(userId)
+        .catch((err) => console.error('Achievement error:', err));
     }
 
     // Возвращаем созданную колонку
