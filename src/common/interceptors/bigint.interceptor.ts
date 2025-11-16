@@ -19,8 +19,7 @@ export class BigIntInterceptor implements NestInterceptor {
     }
 
     if (typeof obj === 'bigint') {
-      // Проверяем, не превышает ли BigInt безопасный диапазон для Number
-      if (obj > Number.MAX_SAFE_INTEGER) {
+      if (obj > Number.MAX_SAFE_INTEGER || obj < Number.MIN_SAFE_INTEGER) {
         console.warn(
           `BigInt value ${obj} exceeds MAX_SAFE_INTEGER, converting to string`,
         );
