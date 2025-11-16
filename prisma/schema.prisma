@@ -50,7 +50,8 @@ model Board {
   members     BoardMember[]
   columns     Column[]
 
-  @@index([userId]) // Индекс для быстрого поиска досок конкретного пользователя
+  // 🔥 УДАЛЕН ИЗБЫТОЧНЫЙ ИНДЕКС: @relation на userId уже создает индекс.
+  // @@index([userId])
 }
 
 model BoardMember {
@@ -63,9 +64,10 @@ model BoardMember {
   addedBy  String?
   board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 🔥 УДАЛЕН ИЗБЫТОЧНЫЙ ИНДЕКС: @relation на userId уже создает индекс.
+  // @@index([userId])
 
   @@unique([boardId, userId])
-  @@index([userId]) // Добавлен для ускорения запросов "Найти все доски, где пользователь является участником"
 }
 
 model BoardInvitation {
@@ -84,8 +86,8 @@ model BoardInvitation {
   sender     User             @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, email])
-  @@index([receiverId]) // Добавлен для ускорения запросов "Найти все приглашения для этого пользователя"
-  @@index([senderId]) // Добавлен для ускорения запросов "Найти все приглашения, отправленные этим пользователем"
+  @@index([receiverId]) // Оставлено, полезно для поиска приглашений
+  @@index([senderId]) // Оставлено, полезно для поиска отправленных приглашений
 }
 
 model Column {
@@ -115,13 +117,14 @@ model Task {
   column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
   user        User?     @relation(fields: [userId], references: [id])
 
-  @@index([columnId]) // Добавлен для запроса задач в конкретной колонке (GET /tasks?columnId=...)
-  @@index([userId]) // Добавлен для запроса задач конкретного пользователя
-  @@index([columnId, userId]) // Добавлен для составного поиска (задачи пользователя в колонке)
-  @@index([isCompleted]) // Добавлен для фильтрации по статусу завершения
+  @@index([columnId])
+  @@index([userId])
+  @@index([columnId, userId]) // Оставлено, полезно для составного поиска
+  @@index([isCompleted])
 }
 
 model UserAnalytics {
+  // ... (оставлено без изменений)
   id                  String    @id @default(uuid())
   userId              String    @unique
   totalBoards         Int       @default(0)
@@ -140,6 +143,7 @@ model UserAnalytics {
 }
 
 model AchievementDefinition {
+  // ... (оставлено без изменений)
   id               String            @id @default(uuid())
   type             String            @unique
   title            String
@@ -151,6 +155,7 @@ model AchievementDefinition {
 }
 
 model UserAchievement {
+  // ... (оставлено без изменений)
   id            String                @id @default(uuid())
   userId        String
   achievementId String
