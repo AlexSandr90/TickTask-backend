@@ -5,7 +5,6 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { join } from 'path';
 import { Response, Request } from 'express';
 
-// Создаем интерфейс для правильной типизации
 interface ResponseWithReq extends Response {
   req: Request;
 }
@@ -34,7 +33,6 @@ import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
       serveRoot: '/static',
       serveStaticOptions: {
         setHeaders: (res: ResponseWithReq) => {
-          // Более безопасный CORS только для изображений
           const allowedOrigins = [
             'https://taskcraft.click',
             'https://www.taskcraft.click',
