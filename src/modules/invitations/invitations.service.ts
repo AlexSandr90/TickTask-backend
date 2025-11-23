@@ -235,16 +235,28 @@ export class BoardInvitationsService {
     userId: string,
     accept: boolean,
   ) {
+    console.log('=== RESPOND TO INVITATION ===');
+    console.log('invitationId:', invitationId);
+    console.log('userId:', userId);
+    console.log('accept:', accept);
+
     const invitation = await this.prisma.boardInvitation.findUnique({
       where: { id: invitationId },
       include: { board: true },
     });
 
+    console.log('invitation found:', invitation ? 'YES' : 'NO');
+
     if (!invitation) {
       throw new NotFoundException('Invitation not found');
     }
 
+    console.log('invitation.receiverId:', invitation.receiverId);
+    console.log('userId:', userId);
+    console.log('Match:', invitation.receiverId === userId);
+
     if (invitation.receiverId && invitation.receiverId !== userId) {
+      console.log('❌ Throwing ForbiddenException');
       throw new ForbiddenException(
         'You are not authorized to respond to this invitation',
       );
