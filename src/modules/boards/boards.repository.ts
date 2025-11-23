@@ -157,7 +157,17 @@ export class BoardsRepository {
 
   async findOneByUserAndId(id: string, userId: string) {
     return this.prisma.board.findFirst({
-      where: { id, userId },
+      where: {
+        id,
+        OR: [
+          { userId },
+          {
+            members: {
+              some: { userId },
+            },
+          },
+        ],
+      },
     });
   }
 
@@ -167,7 +177,17 @@ export class BoardsRepository {
     position: 'asc' | 'desc',
   ) {
     return this.prisma.board.findFirst({
-      where: { id, userId },
+      where: {
+        id,
+        OR: [
+          { userId },
+          {
+            members: {
+              some: { userId },
+            },
+          },
+        ],
+      },
       include: {
         columns: {
           orderBy: { position },
