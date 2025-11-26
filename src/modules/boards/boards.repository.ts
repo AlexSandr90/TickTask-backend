@@ -11,7 +11,16 @@ export class BoardsRepository {
 
   async findAll(userId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.board.findMany({
-      where: { userId },
+      where: {
+        OR: [
+          { userId },
+          {
+            members: {
+              some: { userId },
+            },
+          },
+        ],
+      },
       orderBy: { position },
     });
   }
