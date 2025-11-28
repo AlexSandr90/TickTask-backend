@@ -15,15 +15,18 @@ export class BoardsService {
   constructor(
     private readonly boardsRepository: BoardsRepository,
     private readonly analyticsService: AnalyticsService,
-    private readonly prisma: PrismaService, // внедряем PrismaService
+    private readonly prisma: PrismaService,
     private readonly achievementService: AchievementsService,
   ) {}
 
   async getAllBoards(userId: string) {
-    return this.boardsRepository.findAll(userId, 'asc'); // сортировка по position
+    return this.boardsRepository.findAll(userId, 'asc');
   }
 
-  async getBoardsInBoardsMembers(userId: string, position: 'asc' | 'desc' = 'asc') {
+  async getBoardsInBoardsMembers(
+    userId: string,
+    position: 'asc' | 'desc' = 'asc',
+  ) {
     return this.boardsRepository.findAllBoardsMembers(userId, position);
   }
 
@@ -50,7 +53,14 @@ export class BoardsService {
       throw new NotFoundException('Board not found');
     }
 
-    return board;
+    const { user, members, ...boardDetails } = board;
+
+    const users = [
+      { ...user, role: 'OWNER' },
+      ...members.map((member) => ({ ...member.user, role: member.role })),
+    ];
+
+    return { ...boardDetails, users };
   }
 
   async getAllBoardsWithColumns(

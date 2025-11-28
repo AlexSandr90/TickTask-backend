@@ -3,7 +3,40 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { getNextPosition } from '../../common/utils/position.util';
-import { User } from '@prisma/client';
+import { User, Prisma } from '@prisma/client';
+
+const boardWithUsers = Prisma.validator<Prisma.BoardDefaultArgs>()({
+  include: {
+    user: {
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatarPath: true,
+      },
+    },
+    members: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarPath: true,
+          },
+        },
+      },
+    },
+    columns: {
+      orderBy: { position: 'asc' },
+      include: {
+        tasks: { orderBy: { position: 'asc' } },
+      },
+    },
+  },
+});
+
+export type BoardWithUsers = Prisma.BoardGetPayload<typeof boardWithUsers>;
 
 @Injectable()
 export class BoardsRepository {
@@ -164,7 +197,10 @@ export class BoardsRepository {
     });
   }
 
-  async findOneByUserAndId(id: string, userId: string) {
+  async findOneByUserAndId(
+    id: string,
+    userId: string,
+  ): Promise<BoardWithUsers | null> {
     return this.prisma.board.findFirst({
       where: {
         id,
@@ -176,6 +212,34 @@ export class BoardsRepository {
             },
           },
         ],
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarPath: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+                avatarPath: true,
+              },
+            },
+          },
+        },
+        columns: {
+          orderBy: { position: 'asc' },
+          include: {
+            tasks: { orderBy: { position: 'asc' } },
+          },
+        },
       },
     });
   }
