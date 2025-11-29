@@ -16,7 +16,16 @@ export class TasksRepository {
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
     return this.prisma.task.findMany({
       where: { columnId },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarPath: true,
+         
+          },
+        },
+      },
       orderBy: { position },
     });
   }
