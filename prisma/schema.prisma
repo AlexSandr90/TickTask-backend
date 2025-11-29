@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Для миграций
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -49,9 +49,6 @@ model Board {
   invitations BoardInvitation[]
   members     BoardMember[]
   columns     Column[]
-
-  // 🔥 УДАЛЕН ИЗБЫТОЧНЫЙ ИНДЕКС: @relation на userId уже создает индекс.
-  // @@index([userId])
 }
 
 model BoardMember {
@@ -60,12 +57,10 @@ model BoardMember {
   userId   String
   role     BoardRole @default(USER)
   addedAt  DateTime  @default(now())
-  position Int       @default(0)
   addedBy  String?
+  position Int       @default(0)
   board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // 🔥 УДАЛЕН ИЗБЫТОЧНЫЙ ИНДЕКС: @relation на userId уже создает индекс.
-  // @@index([userId])
 
   @@unique([boardId, userId])
 }
@@ -86,8 +81,8 @@ model BoardInvitation {
   sender     User             @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, email])
-  @@index([receiverId]) // Оставлено, полезно для поиска приглашений
-  @@index([senderId]) // Оставлено, полезно для поиска отправленных приглашений
+  @@index([receiverId])
+  @@index([senderId])
 }
 
 model Column {
@@ -119,12 +114,11 @@ model Task {
 
   @@index([columnId])
   @@index([userId])
-  @@index([columnId, userId]) // Оставлено, полезно для составного поиска
+  @@index([columnId, userId])
   @@index([isCompleted])
 }
 
 model UserAnalytics {
-  // ... (оставлено без изменений)
   id                  String    @id @default(uuid())
   userId              String    @unique
   totalBoards         Int       @default(0)
@@ -143,7 +137,6 @@ model UserAnalytics {
 }
 
 model AchievementDefinition {
-  // ... (оставлено без изменений)
   id               String            @id @default(uuid())
   type             String            @unique
   title            String
@@ -155,7 +148,6 @@ model AchievementDefinition {
 }
 
 model UserAchievement {
-  // ... (оставлено без изменений)
   id            String                @id @default(uuid())
   userId        String
   achievementId String

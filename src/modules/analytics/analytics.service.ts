@@ -134,14 +134,15 @@ export class AnalyticsService {
     }
   }
 
+  // Получаем статистику задач только за ТЕКУЩУЮ неделю (с понедельника)
   async getTasksPerDay(userId: string) {
-    // Получаем количество задач, сгруппированных по дню недели
     const result = await this.prisma.$queryRaw<
       { day: number; count: number }[]
     >`
       SELECT EXTRACT(DOW FROM "createdAt") AS day, COUNT(*) AS count
       FROM "Task"
       WHERE "userId" = ${userId}
+        AND "createdAt" >= DATE_TRUNC('week', NOW())
       GROUP BY day
     `;
 
@@ -152,7 +153,7 @@ export class AnalyticsService {
     );
 
     result.forEach(({ day, count }) => {
-      const d = Number(day); // ← приведение к числу
+      const d = Number(day);
       const index = d === 0 ? 6 : d - 1;
       counts[daysOfWeek[index]] = Number(count);
     });
