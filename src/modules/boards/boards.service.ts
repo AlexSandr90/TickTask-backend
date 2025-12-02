@@ -156,4 +156,55 @@ export class BoardsService {
   async searchBoards(query: string, position: 'asc' | 'desc' = 'asc') {
     return this.boardsRepository.searchBoards(query, position);
   }
+  async getBoardFull(boardId: string, userId: string) {
+    const board = await this.prisma.board.findFirst({
+      where: {
+        id: boardId,
+        OR: [
+          { userId: userId },
+          {
+            members: {
+              some: { userId: userId },
+            },
+          },
+        ],
+      },
+      include: {
+        columns: {
+          include: {
+            tasks: {
+              orderBy: { position: 'asc' },
+            },
+          },
+          orderBy: { position: 'asc' },
+        },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!board) {
+      throw new NotFoundException(
+        `Board with id ${boardId} not found or access denied`,
+      );
+    }
+
+    return board;
+  }
 }
