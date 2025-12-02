@@ -117,6 +117,28 @@ export class BoardsController {
     return this.boardsService.searchBoards(query, position);
   }
 
+  @Get(':id/full')
+  @JwtAuthDecorator()
+  @ApiOperation({
+    summary: 'Get full board details',
+    description: 'Retrieve full board details with all relations',
+  })
+  @ApiGetBoardByIdResponses()
+  @ApiResponse({ status: 200, description: 'Full board details retrieved' })
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid board ID or missing param',
+  )
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this board')
+  @ApiResponseNotFoundDecorator('Board not found')
+  @ApiResponseInternalServerErrorDecorator()
+  async getBoardFull(
+    @Param('id') id: string,
+    @CurrentUserDecorator() user: { id: string },
+  ) {
+    return this.boardsService.getBoardFull(id, user.id);
+  }
+
   @Get(':id')
   @JwtAuthDecorator()
   @ApiOperation({
