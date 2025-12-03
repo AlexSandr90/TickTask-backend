@@ -49,6 +49,9 @@ model Board {
   invitations BoardInvitation[]
   members     BoardMember[]
   columns     Column[]
+
+  @@index([userId])
+  @@index([userId, position])
 }
 
 model BoardMember {
@@ -94,6 +97,9 @@ model Column {
   position  Float    @default(0)
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   tasks     Task[]
+
+  @@index([boardId])
+  @@index([boardId, position])
 }
 
 model Task {
@@ -116,6 +122,7 @@ model Task {
   @@index([userId])
   @@index([columnId, userId])
   @@index([isCompleted])
+  @@index([columnId, position])
 }
 
 model UserAnalytics {
