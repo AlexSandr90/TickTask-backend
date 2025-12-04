@@ -32,6 +32,8 @@ model User {
   receivedInvitations BoardInvitation[] @relation("InvitationReceiver")
   sentInvitations     BoardInvitation[] @relation("InvitationSender")
   boardsMembers       BoardMember[]
+  createdTasks        Task[]            @relation("TaskCreator")
+  assignedTasks       Task[]            @relation("TaskAssignee")
   Task                Task[]
   UserAchievement     UserAchievement[]
   UserAnalytics       UserAnalytics?
@@ -113,16 +115,21 @@ model Task {
   priority    Int       @default(1)
   tags        String[]
   userId      String?
+  assigneeId  String?
   deadline    DateTime?
   isCompleted Boolean   @default(false)
+
   column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
   user        User?     @relation(fields: [userId], references: [id])
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
 
   @@index([columnId])
   @@index([userId])
   @@index([columnId, userId])
   @@index([isCompleted])
   @@index([columnId, position])
+  @@index([assigneeId])
+  User User[] @relation("TaskCreator")
 }
 
 model UserAnalytics {

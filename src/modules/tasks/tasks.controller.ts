@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
@@ -26,6 +27,7 @@ import { CurrentUserDecorator } from '../../common/decorators/current-user.decor
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
 import { ToggleCompleteDto } from './dto/toggle-complete.dto';
 import { Task } from '@prisma/client';
+import { AssignTaskDto } from './dto/assign-task.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -68,6 +70,28 @@ export class TasksController {
     @CurrentUserDecorator() user: { id: string },
   ): Promise<TaskForCalendarDto[]> {
     return await this.tasksService.getAllTasksForCalendar(user.id);
+  }
+
+  @Patch('assign/:id')
+  @JwtAuthDecorator()
+  @ApiOperation({ summary: 'Assigned task for task id' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user received task for column iD',
+  })
+  @ApiResponseBadRequestDecorator(
+    'Bad Request – Invalid task ID or missing param',
+  )
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseForbiddenDecorator('Forbidden – User has no access to this task')
+  @ApiResponseNotFoundDecorator('Task not found')
+  @ApiResponseInternalServerErrorDecorator()
+  async assignTask(
+    @Param('id') id: string,
+    @Body() assignTaskDto: AssignTaskDto,
+    @Req() req,
+  ) {
+    return this.tasksService.assignTask(id, assignTaskDto, req.user.id);
   }
 
   @Get(':id')

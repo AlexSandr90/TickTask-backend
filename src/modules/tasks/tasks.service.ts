@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { TasksRepository } from './tasks.repository';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
 import { Task } from '@prisma/client';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { AchievementsService } from '../achievement/achievement.service';
+import { AssignTaskDto } from './dto/assign-task.dto';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 type AnalyticsUpdate = {
   totalBoards?: { increment?: number; decrement?: number; set?: number };
@@ -25,6 +31,7 @@ type AnalyticsUpdate = {
 @Injectable()
 export class TasksService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly tasksRepository: TasksRepository,
     private readonly analyticsService: AnalyticsService,
     private readonly achievementsService: AchievementsService, // ✅ добавлено
@@ -63,6 +70,56 @@ export class TasksService {
     await this.achievementsService.checkFirstTaskAchievement(userId);
 
     return task;
+  }
+
+  async assignTask(
+    taskId: string,
+    assignTaskDto: AssignTaskDto,
+    requestingUserId: string,
+  ) {
+    const task = await this.tasksRepository.getTaskById(taskId);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const board = await this.prisma.board.findFirst({
+      where: {
+        columns: {
+          some: {
+            id: task.columnId,
+          },
+        },
+      },
+      include: { members: true },
+    });
+
+    if (!board) {
+      throw new NotFoundException('Board not found for this task');
+    }
+
+    const isUserOnBoard =
+      board.userId === requestingUserId ||
+      board.members.some((member) => member.userId === requestingUserId);
+
+    if (!isUserOnBoard) {
+      throw new ForbiddenException(
+        'You do not have permission to assign tasks on this board',
+      );
+    }
+
+    const isAssigneeOnBoard =
+      board.userId === assignTaskDto.assigneeId ||
+      board.members.some(
+        (member) => member.userId === assignTaskDto.assigneeId,
+      );
+
+    if (!isAssigneeOnBoard) {
+      throw new ForbiddenException(
+        'The user to be assigned is not a member of this board',
+      );
+    }
+
+    return this.tasksRepository.assignTask(taskId, assignTaskDto.assigneeId);
   }
 
   async updateTaskStatus(

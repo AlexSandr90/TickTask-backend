@@ -22,7 +22,6 @@ export class TasksRepository {
             id: true,
             username: true,
             avatarPath: true,
-         
           },
         },
       },
@@ -34,6 +33,28 @@ export class TasksRepository {
     return this.prisma.task.findUnique({
       where: { id },
       include: { user: true },
+    });
+  }
+
+  async getTaskById(id: string) {
+    return this.prisma.task.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarPath: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            username: true,
+            avatarPath: true,
+          },
+        },
+      },
     });
   }
 
@@ -69,6 +90,13 @@ export class TasksRepository {
     }
 
     return task;
+  }
+
+  async assignTask(taskId: string, assigneeId: string) {
+    return this.prisma.task.update({
+      where: { id: taskId },
+      data: { assigneeId },
+    });
   }
 
   async update(
