@@ -1,9 +1,6 @@
 import { PrismaService } from '../../../prisma/prisma.service';
 import { EmailService } from '../../email/email.service';
-import {
-  InviteUserToBoardDto,
-  RespondToInvitationDto,
-} from './dto/invitations-user-to-board.dto';
+import { InviteUserToBoardDto } from './dto/invitations-user-to-board.dto';
 import {
   Injectable,
   NotFoundException,
@@ -13,12 +10,14 @@ import {
 } from '@nestjs/common';
 import { BoardRole, InvitationStatus } from '@prisma/client';
 import { randomBytes } from 'crypto';
+import { InvitationsRepository } from './invitations.repository';
 
 @Injectable()
 export class BoardInvitationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly invitationsRepository: InvitationsRepository,
   ) {}
 
   async inviteUserToBoard(
@@ -26,15 +25,10 @@ export class BoardInvitationsService {
     senderId: string,
     inviteDto: InviteUserToBoardDto,
   ) {
-    const board = await this.prisma.board.findUnique({
-      where: { id: boardId },
-      include: {
-        user: true,
-        members: {
-          where: { userId: senderId },
-        },
-      },
-    });
+    const board = await this.invitationsRepository.findUniqueBoardById(
+      boardId,
+      senderId,
+    );
 
     if (!board) {
       throw new NotFoundException('Board not found');
@@ -55,26 +49,21 @@ export class BoardInvitationsService {
     });
 
     if (receiver) {
-      const existingMember = await this.prisma.boardMember.findUnique({
-        where: {
-          boardId_userId: {
-            boardId,
-            userId: receiver.id,
-          },
-        },
-      });
+      const existingMember = await this.invitationsRepository.findUniqueMember(
+        boardId,
+        receiver.id,
+      );
 
       if (existingMember) {
         throw new BadRequestException('User is already a member of this board');
       }
     }
 
-    const existingInvitation = await this.prisma.boardInvitation.findFirst({
-      where: {
+    const existingInvitation =
+      await this.invitationsRepository.findUniqueInvitation(
         boardId,
-        email: inviteDto.email,
-      },
-    });
+        inviteDto.email,
+      );
 
     if (
       existingInvitation &&
@@ -94,22 +83,15 @@ export class BoardInvitationsService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const invitation = await this.prisma.boardInvitation.create({
-      data: {
-        boardId,
-        senderId,
-        receiverId: receiver?.id ?? null,
-        email: inviteDto.email,
-        status: InvitationStatus.PENDING,
-        role: inviteDto.role,
-        token,
-        expiresAt,
-      },
-      include: {
-        board: true,
-        sender: true,
-        receiver: true,
-      },
+    const invitation = await this.invitationsRepository.createInvitation({
+      boardId,
+      senderId,
+      receiverId: receiver?.id ?? null,
+      email: inviteDto.email,
+      status: InvitationStatus.PENDING,
+      role: inviteDto.role,
+      token,
+      expiresAt,
     });
 
     await this.emailService.sendBoardInvitation({
@@ -127,94 +109,32 @@ export class BoardInvitationsService {
         id: invitation.id,
         receiverEmail: inviteDto.email,
         role: invitation.role,
-        status: invitation.status, // ❗ Виправлено (було invitation.role)
+        status: invitation.status,
       },
     };
   }
 
   async getReceivedInvitations(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
+    const user = await this.invitationsRepository.findUniqueUser(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const result = await this.prisma.boardInvitation.findMany({
-      where: {
-        OR: [
-          // Запрошення для зареєстрованих користувачів
-          {
-            receiverId: userId,
-          },
-          // Запрошення по email для незареєстрованих (або тих що зареєструвались пізніше)
-          {
-            email: user.email,
-            receiverId: null, // тільки ті що ще не прив'язані до користувача
-          },
-        ],
-        status: InvitationStatus.PENDING,
-        expiresAt: {
-          gte: new Date(),
-        },
-      },
-      include: {
-        board: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-          },
-        },
-        sender: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+    const result =
+      await this.invitationsRepository.getReceivedInvitationsResult(
+        userId,
+        user.email,
+      );
 
     return result;
   }
 
   async getSentInvitation(userId: string) {
-    const result = await this.prisma.boardInvitation.findMany({
-      where: {
-        senderId: userId,
-        status: InvitationStatus.PENDING,
-        expiresAt: {
-          gte: new Date(),
-        },
-      },
-      include: {
-        board: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const result =
+      await this.invitationsRepository.getSentInvitationsResult(userId);
 
-    const formattedResult = result.map((invitation) => ({
+    return result.map((invitation) => ({
       id: invitation.id,
       boardId: invitation.boardId,
       board: invitation.board,
@@ -226,8 +146,6 @@ export class BoardInvitationsService {
       receiverName: invitation.receiver?.username || invitation.email,
       isRegisteredUser: !!invitation.receiver,
     }));
-
-    return formattedResult;
   }
 
   async respondToInvitation(
@@ -235,28 +153,14 @@ export class BoardInvitationsService {
     userId: string,
     accept: boolean,
   ) {
-    console.log('=== RESPOND TO INVITATION ===');
-    console.log('invitationId:', invitationId);
-    console.log('userId:', userId);
-    console.log('accept:', accept);
-
-    const invitation = await this.prisma.boardInvitation.findUnique({
-      where: { id: invitationId },
-      include: { board: true },
-    });
-
-    console.log('invitation found:', invitation ? 'YES' : 'NO');
+    const invitation =
+      await this.invitationsRepository.getInvitation(invitationId);
 
     if (!invitation) {
       throw new NotFoundException('Invitation not found');
     }
 
-    console.log('invitation.receiverId:', invitation.receiverId);
-    console.log('userId:', userId);
-    console.log('Match:', invitation.receiverId === userId);
-
     if (invitation.receiverId && invitation.receiverId !== userId) {
-      console.log('❌ Throwing ForbiddenException');
       throw new ForbiddenException(
         'You are not authorized to respond to this invitation',
       );
@@ -275,29 +179,19 @@ export class BoardInvitationsService {
     }
 
     if (invitation.expiresAt && invitation.expiresAt < new Date()) {
-      await this.prisma.boardInvitation.update({
-        where: { id: invitationId },
-        data: { status: InvitationStatus.EXPIRED },
-      });
+      await this.invitationsRepository.updateInvitation(
+        invitationId,
+        InvitationStatus.EXPIRED,
+      );
       throw new BadRequestException('Invitation has expired');
     }
 
     if (accept) {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.boardMember.create({
-          data: {
-            boardId: invitation.boardId,
-            userId,
-            role: invitation.role,
-            addedBy: invitation.senderId,
-          },
-        });
-
-        await tx.boardInvitation.update({
-          where: { id: invitationId },
-          data: { status: InvitationStatus.ACCEPTED, receiverId: userId },
-        });
-      });
+      await this.invitationsRepository.setAcceptTransaction(
+        invitation,
+        userId,
+        InvitationStatus.ACCEPTED,
+      );
 
       return {
         message: 'Invitation accepted',
@@ -307,10 +201,10 @@ export class BoardInvitationsService {
         },
       };
     } else {
-      await this.prisma.boardInvitation.update({
-        where: { id: invitationId },
-        data: { status: InvitationStatus.DECLINED },
-      });
+      await this.invitationsRepository.updateInvitation(
+        invitationId,
+        InvitationStatus.DECLINED,
+      );
 
       return { message: 'Invitation declined' };
     }
@@ -321,9 +215,8 @@ export class BoardInvitationsService {
     userId: string,
     accept: boolean,
   ) {
-    const invitation = await this.prisma.boardInvitation.findUnique({
-      where: { token },
-    });
+    const invitation =
+      await this.invitationsRepository.getInvitationByToken(token);
 
     if (!invitation) {
       throw new NotFoundException('Invitation not found');
@@ -341,20 +234,7 @@ export class BoardInvitationsService {
       );
     }
 
-    return this.prisma.boardMember.findMany({
-      where: { boardId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-            avatarPath: true,
-          },
-        },
-      },
-      orderBy: [{ role: 'asc' }, { addedAt: 'asc' }],
-    });
+    return this.invitationsRepository.getBoardMembers(boardId);
   }
 
   async removeMemberFromBoard(
