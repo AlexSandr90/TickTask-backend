@@ -72,7 +72,7 @@ export class TasksController {
     return await this.tasksService.getAllTasksForCalendar(user.id);
   }
 
-  @Patch('assign/:id')
+  @Patch(':id/assign')
   @JwtAuthDecorator()
   @ApiOperation({ summary: 'Assigned task for task id' })
   @ApiResponse({
