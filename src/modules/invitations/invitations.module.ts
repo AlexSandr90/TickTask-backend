@@ -8,11 +8,17 @@ import { PrismaModule } from '../../../prisma/prisma.module';
 import { BoardInvitationsController } from './invitations.controller';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
+import { InvitationsRepository } from './invitations.repository';
 
 @Module({
   imports: [PrismaModule, UsersModule, AuthModule],
   controllers: [BoardInvitationsController],
-  providers: [JwtAuthGuard, EmailService, BoardInvitationsService],
+  providers: [
+    JwtAuthGuard,
+    EmailService,
+    BoardInvitationsService,
+    InvitationsRepository,
+  ],
   exports: [BoardInvitationsService],
 })
 export class BoardInvitationsModule {}
