@@ -205,4 +205,44 @@ export class InvitationsRepository {
       orderBy: [{ role: 'asc' }, { addedAt: 'asc' }],
     });
   }
+
+  async findBoardForMemberRemoval(
+    boardId: string,
+    requesterId: string,
+    memberUserId: string,
+  ) {
+    return this.prisma.board.findUnique({
+      where: { id: boardId },
+      include: {
+        members: {
+          where: {
+            userId: { in: [requesterId, memberUserId] },
+          },
+        },
+      },
+    });
+  }
+
+  async removeMember(memberId: string) {
+    return this.prisma.boardMember.delete({
+      where: { id: memberId },
+    });
+  }
+
+  async checkBoardAccess(boardId: string, userId: string): Promise<boolean> {
+    const board = await this.prisma.board.findUnique({
+      where: { id: boardId },
+      include: {
+        members: {
+          where: { userId },
+        },
+      },
+    });
+
+    if (!board) {
+      return false;
+    }
+
+    return board.userId === userId || board.members.length > 0;
+  }
 }

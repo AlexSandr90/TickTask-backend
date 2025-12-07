@@ -226,7 +226,10 @@ export class BoardInvitationsService {
   }
 
   async getBoardMembers(boardId: string, requestId: string) {
-    const hasAccess = await this.checkBoardAccess(boardId, requestId);
+    const hasAccess = await this.invitationsRepository.checkBoardAccess(
+      boardId,
+      requestId,
+    );
 
     if (!hasAccess) {
       throw new ForbiddenException(
@@ -242,16 +245,11 @@ export class BoardInvitationsService {
     memberUserId: string,
     requesterId: string,
   ) {
-    const board = await this.prisma.board.findUnique({
-      where: { id: boardId },
-      include: {
-        members: {
-          where: {
-            userId: { in: [requesterId, memberUserId] },
-          },
-        },
-      },
-    });
+    const board = await this.invitationsRepository.findBoardForMemberRemoval(
+      boardId,
+      requesterId,
+      memberUserId,
+    );
 
     if (!board) {
       throw new NotFoundException('Board not found');
@@ -277,31 +275,8 @@ export class BoardInvitationsService {
       throw new NotFoundException('The user is not a member of this board');
     }
 
-    await this.prisma.boardMember.delete({
-      where: { id: targetMember.id },
-    });
+    await this.invitationsRepository.removeMember(targetMember.id);
 
     return { message: 'Member removed successfully' };
-  }
-
-  // ==================== PRIVATE METHODS ====================
-  private async checkBoardAccess(
-    boardId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const board = await this.prisma.board.findUnique({
-      where: { id: boardId },
-      include: {
-        members: {
-          where: { userId },
-        },
-      },
-    });
-
-    if (!board) {
-      return false;
-    }
-
-    return board.userId === userId || board.members.length > 0;
   }
 }
