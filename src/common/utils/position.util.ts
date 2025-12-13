@@ -1,5 +1,5 @@
 // ============================================
-// common/utils/position.util.ts - МАКСИМАЛЬНО СТРОГАЯ ТИПИЗАЦИЯ
+// common/utils/position.util.ts - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
 // ============================================
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -23,7 +23,7 @@ export async function getNextPosition(
   whereCondition: Prisma.TaskWhereInput,
 ): Promise<number>;
 
-// Реализация
+// ✅ ОПТИМИЗИРОВАННАЯ РЕАЛИЗАЦИЯ - aggregate вместо findFirst
 export async function getNextPosition(
   prisma: PrismaService,
   model: 'board' | 'column' | 'task',
@@ -34,29 +34,30 @@ export async function getNextPosition(
 ): Promise<number> {
   const startTime = Date.now();
 
-  let lastItem: { position: number } | null = null;
+  let maxPosition: number | null = null;
 
+  // ✅ Используем aggregate._max - В РАЗЫ БЫСТРЕЕ чем findFirst + orderBy
   if (model === 'column') {
-    lastItem = await prisma.column.findFirst({
+    const result = await prisma.column.aggregate({
       where: whereCondition as Prisma.ColumnWhereInput,
-      orderBy: { position: 'desc' },
-      select: { position: true },
+      _max: { position: true },
     });
+    maxPosition = result._max.position;
   } else if (model === 'task') {
-    lastItem = await prisma.task.findFirst({
+    const result = await prisma.task.aggregate({
       where: whereCondition as Prisma.TaskWhereInput,
-      orderBy: { position: 'desc' },
-      select: { position: true },
+      _max: { position: true },
     });
+    maxPosition = result._max.position;
   } else if (model === 'board') {
-    lastItem = await prisma.board.findFirst({
+    const result = await prisma.board.aggregate({
       where: whereCondition as Prisma.BoardWhereInput,
-      orderBy: { position: 'desc' },
-      select: { position: true },
+      _max: { position: true },
     });
+    maxPosition = result._max.position;
   }
 
-  const nextPosition = (lastItem?.position ?? -1) + 1000;
+  const nextPosition = (maxPosition ?? -1) + 1000;
 
   console.log(
     `🔍 getNextPosition(${model}) took ${Date.now() - startTime}ms, next: ${nextPosition}`,
