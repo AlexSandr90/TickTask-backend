@@ -34,7 +34,7 @@ export class TasksService {
     private readonly prisma: PrismaService,
     private readonly tasksRepository: TasksRepository,
     private readonly analyticsService: AnalyticsService,
-    private readonly achievementsService: AchievementsService, // ✅ добавлено
+    private readonly achievementsService: AchievementsService,
   ) {}
 
   async getAllTasks(columnId: string, position: 'asc' | 'desc' = 'asc') {
@@ -53,6 +53,7 @@ export class TasksService {
     priority: number = 1,
     tags: string[] = [],
   ) {
+    // 1. Создаём таск (главная операция)
     const task = await this.tasksRepository.create({
       title,
       description,
@@ -62,13 +63,18 @@ export class TasksService {
       userId,
     });
 
-    await this.analyticsService.updateAnalytics(userId, {
-      totalTasks: { increment: 1 },
-      inProgressTasks: { increment: 1 },
+    // 2. ✅ Запускаем аналитику и достижения в фоне БЕЗ ОЖИДАНИЯ
+    Promise.all([
+      this.analyticsService.updateAnalytics(userId, {
+        totalTasks: { increment: 1 },
+        inProgressTasks: { increment: 1 },
+      }),
+      this.achievementsService.checkFirstTaskAchievement(userId),
+    ]).catch((error) => {
+      console.error('Error processing task creation side effects:', error);
     });
 
-    await this.achievementsService.checkFirstTaskAchievement(userId);
-
+    // 3. Возвращаем таск сразу
     return task;
   }
 
@@ -131,21 +137,26 @@ export class TasksService {
     if (!task) throw new NotFoundException('Task not found');
     if (task.isCompleted === isCompleted) return task;
 
-    await this.tasksRepository.update(taskId, { isCompleted });
+    const updatedTask = await this.tasksRepository.update(taskId, {
+      isCompleted,
+    });
 
     const analyticsUpdate: AnalyticsUpdate = {};
     if (isCompleted) {
       analyticsUpdate.inProgressTasks = { decrement: 1 };
       analyticsUpdate.completedTasks = { increment: 1 };
-      analyticsUpdate.completedTasksTotal = { increment: 1 }; // ✅ Добавьте это
+      analyticsUpdate.completedTasksTotal = { increment: 1 };
     } else {
       analyticsUpdate.inProgressTasks = { increment: 1 };
       analyticsUpdate.completedTasks = { decrement: 1 };
     }
 
-    await this.analyticsService.updateAnalytics(userId, analyticsUpdate);
+    // ✅ Обновляем аналитику в фоне
+    this.analyticsService.updateAnalytics(userId, analyticsUpdate).catch((error) => {
+      console.error('Error updating analytics on status change:', error);
+    });
 
-    return task;
+    return updatedTask;
   }
 
   async updateTask(
@@ -213,7 +224,6 @@ export class TasksService {
     return this.tasksRepository.update(id, updates);
   }
 
-  // ✅ Публичный метод для обновления позиций нескольких задач
   async updateTaskPositions(
     tasks: { id: string; columnId: string; position: number }[],
   ) {
@@ -269,7 +279,10 @@ export class TasksService {
       analyticsUpdate.inProgressTasks = { decrement: 1 };
     }
 
-    await this.analyticsService.updateAnalytics(userId, analyticsUpdate);
+    // ✅ Обновляем аналитику в фоне
+    this.analyticsService.updateAnalytics(userId, analyticsUpdate).catch((error) => {
+      console.error('Error updating analytics after delete:', error);
+    });
 
     return deletedTask;
   }
@@ -278,7 +291,6 @@ export class TasksService {
     return await this.tasksRepository.findAllForCalendar(userId);
   }
 
-  // ✅ Исправленный toggleComplete с userId
   async toggleComplete(
     taskId: string,
     isCompleted: boolean,
@@ -303,8 +315,11 @@ export class TasksService {
       analyticsUpdate.completedTasksTotal = { decrement: 1 };
     }
 
+    // ✅ Обновляем аналитику в фоне если есть изменения
     if (Object.keys(analyticsUpdate).length > 0) {
-      await this.analyticsService.updateAnalytics(userId, analyticsUpdate);
+      this.analyticsService.updateAnalytics(userId, analyticsUpdate).catch((error) => {
+        console.error('Error updating analytics on toggle complete:', error);
+      });
     }
 
     const updatedTask = await this.tasksRepository.findById(taskId);

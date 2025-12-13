@@ -20,6 +20,7 @@ import { UserActivityModule } from './modules/user-activity/user-activity.module
 import { BoardInvitationsModule } from './modules/invitations/invitations.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
+import { ContactModule } from './email/contact.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
     UserActivityModule,
     BoardInvitationsModule,
     AchievementModule,
+    ContactModule,
   ],
   controllers: [],
   providers: [
