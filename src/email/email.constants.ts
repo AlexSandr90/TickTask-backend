@@ -34,6 +34,18 @@ export const EMAIL_TEMPLATES = {
     BUTTON_TEXT: 'Прийняти запрошення',
     BUTTON_TYPE: 'info' as const,
   },
+
+  // 🟢 Новый шаблон для контактной формы
+  CONTACT_FORM: {
+    TITLE: 'Новое сообщение с Contact Form',
+    CONTENT: (data: { name: string; email: string; message: string }) => `
+      <p><strong>Имя:</strong> ${data.name}</p>
+      <p><strong>Email:</strong> ${data.email}</p>
+      <p><strong>Сообщение:</strong> ${data.message}</p>
+    `,
+    BUTTON_TEXT: '', // кнопка не нужна
+    BUTTON_TYPE: 'info' as const,
+  },
 } as const;
 
 export const EMAIL_SUBJECTS = {
@@ -41,4 +53,7 @@ export const EMAIL_SUBJECTS = {
   PASSWORD_RESET: 'Reset Your Password - Taskcraft',
   BOARD_INVITATION: (boardTitle: string) =>
     `You have been invited to join the board: ${boardTitle}`,
+
+  // 🟢 Новый subject для контактной формы
+  CONTACT_FORM: 'Новое сообщение с Contact Form',
 } as const;
