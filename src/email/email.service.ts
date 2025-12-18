@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { Injectable } from '@nestjs/common';
-import { EMAIL_TEMPLATES } from './email.constants';
+import { EMAIL_SUBJECTS, EMAIL_TEMPLATES } from './email.constants';
 import { APP_CONFIG } from '../configurations/app.config';
 
 const resend = new Resend(process.env.EMAIL_API_KEY);
@@ -275,5 +275,36 @@ export class EmailService {
     html?: string,
   ): Promise<void> {
     await this.sendEmail({ to, subject, text, html: html || text });
+  }
+  async sendContactFormEmail(data: {
+    name: string;
+    email: string;
+    message: string;
+  }): Promise<void> {
+    const template = EMAIL_TEMPLATES.CONTACT_FORM;
+    const html = this.createHtmlTemplate(
+      template.TITLE,
+      template.CONTENT(data),
+      template.BUTTON_TEXT, // здесь пусто, кнопка не нужна
+      undefined,
+      template.BUTTON_TYPE
+    );
+
+    const textVersion = `
+
+
+Имя: ${data.name}
+Email: ${data.email}
+Сообщение:
+${data.message}
+`;
+
+    // Отправляем письмо на твою рабочую почту
+    await this.sendEmail({
+      to: 'smailxxxvizde@gmail.com', // твоя почта, куда будут приходить сообщения
+      subject: EMAIL_SUBJECTS.CONTACT_FORM,
+      text: textVersion,
+      html,
+    });
   }
 }

@@ -4,13 +4,12 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { getNextPosition } from '../../common/utils/position.util';
 import { TaskForCalendarDto } from './dto/calendar-task.dto';
 import { Task } from '@prisma/client';
-import { AchievementsService } from '../achievement/achievement.service';
 
 @Injectable()
 export class TasksRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly achievementsService: AchievementsService,
+    // ❌ УБРАЛИ achievementsService - бизнес-логика должна быть в сервисе
   ) {}
 
   async findAll(columnId: string, position: 'asc' | 'desc' = 'asc') {
@@ -84,11 +83,7 @@ export class TasksRepository {
       },
     });
 
-    // ✅ Проверяем достижение после создания
-    if (task.userId) {
-      await this.achievementsService.checkFirstTaskAchievement(task.userId);
-    }
-
+    // ✅ УБРАЛИ проверку достижений отсюда - теперь только в сервисе
     return task;
   }
 
@@ -110,7 +105,7 @@ export class TasksRepository {
       title?: string;
       description?: string;
       deadline?: Date | null;
-      isCompleted?: boolean; // <-- добавляем
+      isCompleted?: boolean;
     },
   ) {
     return this.prisma.task.update({
@@ -181,10 +176,9 @@ export class TasksRepository {
     });
   }
 
-  // tasks.repository.ts
   async findAllForCalendar(userId: string): Promise<TaskForCalendarDto[]> {
     const tasks = await this.prisma.task.findMany({
-      where: { userId }, // фильтр по текущему пользователю
+      where: { userId },
       include: {
         column: { select: { boardId: true } },
         user: true,
@@ -209,6 +203,8 @@ export class TasksRepository {
       boardId: task.column.boardId,
       columnId: task.columnId,
       userId: task.userId ?? undefined,
+      isCompleted: task.isCompleted,
+      position: task.position,
     }));
   }
 
