@@ -131,7 +131,6 @@ model Task {
   @@index([isCompleted])
   @@index([columnId, position])
   @@index([assigneeId])
-  creators User[] @relation("TaskCreator") // 🔹 Верни эту строку
 }
 
 model UserAnalytics {
