@@ -16,6 +16,7 @@ model User {
   createdAt           DateTime          @default(now())
   lastLogin           DateTime?
   theme               String            @default("light")
+  language            String            @default("en")
   notifications       Boolean           @default(true)
   refreshToken        String?
   updatedAt           DateTime          @updatedAt
@@ -119,9 +120,10 @@ model Task {
   deadline    DateTime?
   isCompleted Boolean   @default(false)
 
-  column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  user        User?     @relation(fields: [userId], references: [id])
-  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  user     User?  @relation(fields: [userId], references: [id])
+  assignee User?  @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  User     User[] @relation("TaskCreator")
 
   @@index([columnId])
   @@index([userId])
@@ -129,7 +131,6 @@ model Task {
   @@index([isCompleted])
   @@index([columnId, position])
   @@index([assigneeId])
-  User User[] @relation("TaskCreator")
 }
 
 model UserAnalytics {

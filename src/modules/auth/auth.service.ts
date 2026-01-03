@@ -1,10 +1,10 @@
 import {
-  Response,
   HttpStatus,
   Injectable,
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
+// Убираем импорт Response из express
 import { JwtService } from '@nestjs/jwt';
 import { UserWithoutPassword } from '../users/interfaces/user.interface';
 import * as bcrypt from 'bcrypt';
@@ -51,24 +51,45 @@ export class AuthService {
   async login(
     email: string,
     password: string,
-    @Response() res: any,
+    language: string | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    res: any, // 🔹 Используем any
   ): Promise<void> {
     const user = await this.userBusinessValidator.validateUserCredentials(
       email,
       password,
     );
+
+    await this.usersRepository.updateLastLoginAndLanguage(user.id, language);
+
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
     this.userBusinessValidator.setAuthCookies(res, accessToken, refreshToken);
-    res
-      .status(HttpStatus.OK)
-      .json({ message: 'Successfully logged in!', access_token: accessToken });
-    return;
+
+    const updatedUser = await this.usersRepository.findById(user.id);
+
+    if (!updatedUser) {
+      throw new UnauthorizedException('User not found after login');
+    }
+
+    res.status(HttpStatus.OK).json({
+      message: 'Successfully logged in!',
+      access_token: accessToken,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        language: updatedUser.language,
+        theme: updatedUser.theme,
+        avatarPath: updatedUser.avatarPath,
+      },
+    });
   }
 
   async refreshToken(
     refreshToken: string,
-    @Response() res: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    res: any, // 🔹 Используем any
   ): Promise<{ access_token: string }> {
     try {
       const decoded = this.jwtService.verify(refreshToken);
@@ -88,11 +109,12 @@ export class AuthService {
       );
 
       return res.json({ access_token: newAccessToken });
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async googleLogin(user: any): Promise<any> {
     try {
       if (!user.googleId || !user.email || !user.username) {
@@ -103,8 +125,9 @@ export class AuthService {
         googleId: user.googleId,
         email: user.email,
         username: user.username,
+        language: user.language || 'en',
       });
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid Google user data!');
     }
   }
@@ -161,5 +184,17 @@ export class AuthService {
     await this.usersRepository.updatePassword(user.id, hashedPassword);
 
     return { message: 'Password has been set successfully' };
+  }
+
+  async updateLanguage(
+    userId: string,
+    language: string,
+  ): Promise<{ language: string }> {
+    if (!this.usersRepository.isValidLanguage(language)) {
+      throw new BadRequestException('Invalid language. Supported: en, ru, ua');
+    }
+
+    const user = await this.usersRepository.updateLanguage(userId, language);
+    return { language: user.language };
   }
 }

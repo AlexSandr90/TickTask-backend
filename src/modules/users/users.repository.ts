@@ -3,9 +3,14 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { use } from 'passport';
 
 dayjs.extend(timezone);
+
+type UserListItem = {
+  id: string;
+  username: string;
+  avatarPath: string | null;
+};
 
 @Injectable()
 export class UsersRepository {
@@ -77,6 +82,7 @@ export class UsersRepository {
     const user = await this.findByEmail(email);
 
     if (!user) throw new Error('User not found');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, googleId, passwordResetToken, ...safeUser } = user;
     return safeUser;
   }
@@ -99,6 +105,7 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { googleId } });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async findOneByIdAndAvatarPath(id: string, avatarPath: string) {
     return this.prisma.user.findUnique({
       where: { id },
@@ -112,10 +119,15 @@ export class UsersRepository {
     username: string;
     email: string;
     passwordHash: string;
+    language?: string;
     timezone: string;
   }) {
     return this.prisma.user.create({
-      data: { ...data, isActive: false },
+      data: {
+        ...data,
+        language: data.language || 'en', // 🔹 Дефолтный язык
+        isActive: false,
+      },
     });
   }
 
@@ -123,15 +135,20 @@ export class UsersRepository {
     googleId: string;
     email: string;
     username: string;
+    language?: string;
     isActive?: boolean;
   }): Promise<User> {
     return this.prisma.user.upsert({
       where: { email: googleUserData.email },
-      update: { googleId: googleUserData.googleId },
+      update: {
+        googleId: googleUserData.googleId,
+        ...(googleUserData.language && { language: googleUserData.language }), // 🔹 Обновляем язык если передан
+      },
       create: {
         email: googleUserData.email,
         username: googleUserData.username,
         googleId: googleUserData.googleId,
+        language: googleUserData.language || 'en', // 🔹 Дефолтный язык
         isActive:
           googleUserData.isActive !== undefined
             ? googleUserData.isActive
@@ -212,7 +229,7 @@ export class UsersRepository {
     });
 
     if (!user || !user.pendingEmail) {
-      throw null;
+      throw new Error('Invalid email change token or pending email not found');
     }
 
     return this.prisma.user.update({
@@ -263,14 +280,42 @@ export class UsersRepository {
     try {
       dayjs().tz(timezone);
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
-  async findAll(): Promise<
-    { id: string; username: string; avatarPath: string | null }[]
-  > {
+  // 🔹 ------------LANGUAGE------------
+
+  async updateLanguage(userId: string, language: string): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { language },
+    });
+  }
+
+  isValidLanguage(language: string): boolean {
+    const supportedLanguages = ['en', 'ru', 'ua'];
+    return supportedLanguages.includes(language);
+  }
+
+  // 🔹 Обновление lastLogin и опционально языка
+  async updateLastLoginAndLanguage(
+    userId: string,
+    language?: string,
+  ): Promise<User> {
+    const updateData: Prisma.UserUpdateInput = {
+      lastLogin: new Date(),
+    };
+
+    if (language && this.isValidLanguage(language)) {
+      updateData.language = language;
+    }
+
+    return this.updateUserById(userId, updateData);
+  }
+
+  async findAll(): Promise<UserListItem[]> {
     return this.prisma.user.findMany({
       select: {
         id: true,
