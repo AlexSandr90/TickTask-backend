@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -53,4 +54,8 @@ export class UserDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+  @IsOptional()
+  @IsString()
+  @IsIn(['en', 'ru', 'ua'])
+  language?: string; // 🔹 Добавляем поле языка
 }

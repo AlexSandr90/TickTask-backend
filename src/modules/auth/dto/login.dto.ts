@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -12,4 +19,8 @@ export class LoginDto {
   @MinLength(6, { message: 'The password must be at least 6 characters long.' })
   @IsNotEmpty({ message: 'A password is required' })
   password: string;
+  @IsOptional()
+  @IsString()
+  @IsIn(['en', 'ru', 'ua'])
+  language?: string; // 🔹 Добавляем поле языка
 }

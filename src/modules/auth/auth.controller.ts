@@ -29,12 +29,12 @@ import { APP_CONFIG } from '../../configurations/app.config';
 import { JwtAuthGuard } from '../../guards/auth.guard';
 import { AUTH_CONFIG } from '../../configurations/auth.config';
 import { SetGooglePasswordDto } from './dto/set-password.dto';
+import { UpdateLanguageDto } from './dto/update-language.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService, // Ваш сервис аутентификации
-  ) {}
+  // 🔹 Убедись что здесь есть export
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Registration new User' })
@@ -77,6 +77,7 @@ export class AuthController {
       return await this.authService.login(
         loginDto.email,
         loginDto.password,
+        loginDto.language,
         res,
       );
     } catch (error) {
@@ -153,9 +154,9 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@Req() req: Request, @Res() res: Response) {
     try {
-      const user = req.user; // Получаем пользователя из запроса (после успешной аутентификации через Google)
+      const user = req.user;
       const processedUser = await this.authService.googleLogin(user);
-      const { email, googleId } = processedUser;
+      const { googleId } = processedUser;
 
       if (!googleId) {
         return res.status(400).json({
@@ -170,9 +171,9 @@ export class AuthController {
 
       res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: isProduction, // HTTPS только в проде
-        sameSite: isProduction ? 'none' : 'lax', // в проде нужно none
-        domain: isProduction ? 'taskcraft.click' : undefined, // домен только в проде
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? 'taskcraft.click' : undefined,
         maxAge: Number(AUTH_CONFIG.expireJwt),
         path: '/',
       });
@@ -186,7 +187,6 @@ export class AuthController {
         path: '/',
       });
 
-      // Перенаправление на домашнюю страницу
       return res.redirect(`${APP_CONFIG.baseUrl}/home`);
     } catch (error) {
       console.error('Google Callback Error:', error);
@@ -220,5 +220,21 @@ export class AuthController {
       req.user.id,
       dto.newPassword,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('language')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user language preference' })
+  @ApiResponse({ status: 200, description: 'Language updated successfully' })
+  @ApiResponseUnauthorizedDecorator()
+  @ApiResponseBadRequestDecorator()
+  @ApiResponseInternalServerErrorDecorator()
+  async updateLanguage(
+    @Req() req: Request,
+    @Body() dto: UpdateLanguageDto,
+  ): Promise<{ language: string }> {
+    const user = req.user as { id: string };
+    return this.authService.updateLanguage(user.id, dto.language);
   }
 }
