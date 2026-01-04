@@ -3,13 +3,12 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { getNextPosition } from '../../common/utils/position.util';
 import { UpdateColumnDto } from './dto/update-column.dto';
-import { AchievementsService } from '../achievement/achievement.service';
 
 @Injectable()
 export class ColumnsRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly achievementsService: AchievementsService,
+    // ❌ Убираем AchievementsService отсюда - это не его зона ответственности
   ) {}
 
   async findAll(boardId: string, position: 'asc' | 'desc' = 'asc') {
@@ -68,7 +67,7 @@ export class ColumnsRepository {
     });
   }
 
-  async create(columnData: CreateColumnDto, userId: string) {
+  async create(columnData: CreateColumnDto) {
     const nextPosition = await getNextPosition(this.prisma, 'column', {
       boardId: columnData.boardId,
     });
@@ -80,13 +79,10 @@ export class ColumnsRepository {
         board: { connect: { id: columnData.boardId } },
       },
     });
-    if (userId) {
-      this.achievementsService
-        .checkFirstColumnAchievement(userId)
-        .catch((err) => console.error('Achievement error:', err));
-    }
 
-    // Возвращаем созданную колонку
+    // ❌ Убрали проверку достижений отсюда
+    // Репозиторий отвечает только за работу с БД
+
     return column;
   }
 
