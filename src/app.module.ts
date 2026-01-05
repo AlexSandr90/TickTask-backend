@@ -21,6 +21,7 @@ import { BoardInvitationsModule } from './modules/invitations/invitations.module
 import { AchievementModule } from './modules/achievement/achievement.module';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
 import { ContactModule } from './email/contact.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { ContactModule } from './email/contact.module';
     BoardInvitationsModule,
     AchievementModule,
     ContactModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [
