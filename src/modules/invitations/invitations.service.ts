@@ -203,7 +203,7 @@ export class BoardInvitationsService {
     } else {
       await this.invitationsRepository.updateInvitation(
         invitationId,
-        InvitationStatus.DECLINED,
+        InvitationStatus.REJECTED,
       );
 
       return { message: 'Invitation declined' };

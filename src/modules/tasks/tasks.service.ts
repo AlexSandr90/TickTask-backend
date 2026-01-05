@@ -11,6 +11,8 @@ import { AnalyticsService } from '../analytics/analytics.service';
 import { AchievementsService } from '../achievement/achievement.service';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+
 
 type AnalyticsUpdate = {
   totalBoards?: { increment?: number; decrement?: number; set?: number };
@@ -35,6 +37,7 @@ export class TasksService {
     private readonly tasksRepository: TasksRepository,
     private readonly analyticsService: AnalyticsService,
     private readonly achievementsService: AchievementsService,
+    private readonly notificationsService: NotificationsService, // ✅ ДОБАВИТЬ
   ) {}
 
   async getAllTasks(columnId: string, position: 'asc' | 'desc' = 'asc') {
@@ -53,7 +56,6 @@ export class TasksService {
     priority: number = 1,
     tags: string[] = [],
   ) {
-    // 1. Создаём таск (главная операция)
     const task = await this.tasksRepository.create({
       title,
       description,
@@ -63,7 +65,6 @@ export class TasksService {
       userId,
     });
 
-    // 2. ✅ Запускаем аналитику и достижения в фоне БЕЗ ОЖИДАНИЯ
     Promise.all([
       this.analyticsService.updateAnalytics(userId, {
         totalTasks: { increment: 1 },
@@ -74,7 +75,6 @@ export class TasksService {
       console.error('Error processing task creation side effects:', error);
     });
 
-    // 3. Возвращаем таск сразу
     return task;
   }
 
@@ -125,7 +125,31 @@ export class TasksService {
       );
     }
 
-    return this.tasksRepository.assignTask(taskId, assignTaskDto.assigneeId);
+    const updatedTask = await this.tasksRepository.assignTask(
+      taskId,
+      assignTaskDto.assigneeId,
+    );
+
+    // ✅ ДОБАВИТЬ: Отправка уведомления о назначении задачи
+    if (assignTaskDto.assigneeId !== requestingUserId) {
+      const assigner = await this.prisma.user.findUnique({
+        where: { id: requestingUserId },
+        select: { username: true },
+      });
+
+      this.notificationsService
+        .notifyTaskAssigned(
+          taskId,
+          assignTaskDto.assigneeId,
+          assigner?.username || 'Кто-то',
+          task.title,
+        )
+        .catch((error) => {
+          console.error('Error sending task assignment notification:', error);
+        });
+    }
+
+    return updatedTask;
   }
 
   async updateTaskStatus(
@@ -146,15 +170,35 @@ export class TasksService {
       analyticsUpdate.inProgressTasks = { decrement: 1 };
       analyticsUpdate.completedTasks = { increment: 1 };
       analyticsUpdate.completedTasksTotal = { increment: 1 };
+
+      // ✅ ДОБАВИТЬ: Уведомление создателю задачи о завершении
+      if (task.userId && task.userId !== userId) {
+        const completedBy = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { username: true },
+        });
+
+        this.notificationsService
+          .notifyTaskCompleted(
+            taskId,
+            task.userId,
+            completedBy?.username || 'Кто-то',
+            task.title,
+          )
+          .catch((error) => {
+            console.error('Error sending task completion notification:', error);
+          });
+      }
     } else {
       analyticsUpdate.inProgressTasks = { increment: 1 };
       analyticsUpdate.completedTasks = { decrement: 1 };
     }
 
-    // ✅ Обновляем аналитику в фоне
-    this.analyticsService.updateAnalytics(userId, analyticsUpdate).catch((error) => {
-      console.error('Error updating analytics on status change:', error);
-    });
+    this.analyticsService
+      .updateAnalytics(userId, analyticsUpdate)
+      .catch((error) => {
+        console.error('Error updating analytics on status change:', error);
+      });
 
     return updatedTask;
   }
@@ -172,6 +216,11 @@ export class TasksService {
   ) {
     const task = await this.tasksRepository.findOne(id);
     if (!task) throw new Error('Task not found');
+
+    // ✅ ДОБАВИТЬ: Проверка изменения приоритета
+    const priorityChanged =
+      priority !== undefined && priority !== task.priority;
+    const oldPriority = task.priority;
 
     const updates: Partial<UpdateTaskDto> & { deadline?: Date | null } = {};
     if (title !== undefined) updates.title = title;
@@ -221,7 +270,24 @@ export class TasksService {
       await this.tasksRepository.updateManyPositions(final);
     }
 
-    return this.tasksRepository.update(id, updates);
+    const updatedTask = await this.tasksRepository.update(id, updates);
+
+    // ✅ ДОБАВИТЬ: Уведомление об изменении приоритета
+    if (priorityChanged && task.assigneeId) {
+      this.notificationsService
+        .createNotification({
+          userId: task.assigneeId,
+          type: 'TASK_PRIORITY_CHANGED' as any,
+          title: 'Изменен приоритет задачи',
+          message: `Приоритет задачи "${task.title}" изменен с ${oldPriority} на ${priority}`,
+          relatedTaskId: id,
+        })
+        .catch((error) => {
+          console.error('Error sending priority change notification:', error);
+        });
+    }
+
+    return updatedTask;
   }
 
   async updateTaskPositions(
@@ -279,10 +345,11 @@ export class TasksService {
       analyticsUpdate.inProgressTasks = { decrement: 1 };
     }
 
-    // ✅ Обновляем аналитику в фоне
-    this.analyticsService.updateAnalytics(userId, analyticsUpdate).catch((error) => {
-      console.error('Error updating analytics after delete:', error);
-    });
+    this.analyticsService
+      .updateAnalytics(userId, analyticsUpdate)
+      .catch((error) => {
+        console.error('Error updating analytics after delete:', error);
+      });
 
     return deletedTask;
   }
@@ -309,17 +376,37 @@ export class TasksService {
       analyticsUpdate.inProgressTasks = { decrement: 1 };
       analyticsUpdate.completedTasks = { increment: 1 };
       analyticsUpdate.completedTasksTotal = { increment: 1 };
+
+      // ✅ ДОБАВИТЬ: Уведомление о завершении задачи
+      if (task.userId && task.userId !== userId) {
+        const completedBy = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { username: true },
+        });
+
+        this.notificationsService
+          .notifyTaskCompleted(
+            taskId,
+            task.userId,
+            completedBy?.username || 'Кто-то',
+            task.title,
+          )
+          .catch((error) => {
+            console.error('Error sending completion notification:', error);
+          });
+      }
     } else if (!isCompleted && wasAlreadyCompleted) {
       analyticsUpdate.inProgressTasks = { increment: 1 };
       analyticsUpdate.completedTasks = { decrement: 1 };
       analyticsUpdate.completedTasksTotal = { decrement: 1 };
     }
 
-    // ✅ Обновляем аналитику в фоне если есть изменения
     if (Object.keys(analyticsUpdate).length > 0) {
-      this.analyticsService.updateAnalytics(userId, analyticsUpdate).catch((error) => {
-        console.error('Error updating analytics on toggle complete:', error);
-      });
+      this.analyticsService
+        .updateAnalytics(userId, analyticsUpdate)
+        .catch((error) => {
+          console.error('Error updating analytics on toggle complete:', error);
+        });
     }
 
     const updatedTask = await this.tasksRepository.findById(taskId);
