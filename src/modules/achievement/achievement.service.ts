@@ -6,10 +6,15 @@ import {
   InitializeAchievementsResponseDto,
   UserAchievementResponseDto,
 } from './achievement.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AchievementsService implements OnModuleInit {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    // ДОБАВЛЯЕМ СЕРВИС УВЕДОМЛЕНИЙ:
+    private notificationsService: NotificationsService,
+  ) {}
 
   // Создание определения достижения
   async createAchievementDefinition(
@@ -81,7 +86,12 @@ export class AchievementsService implements OnModuleInit {
           unlockedAt: new Date(),
         },
       });
-
+      // 🔥 ДОБАВЛЯЕМ ВЫЗОВ УВЕДОМЛЕНИЯ ТУТ:
+      await this.notificationsService.notifyAchievementUnlocked(
+        userId,
+        achievementDefinition.title,
+        achievementDefinition.description,
+      );
       return true;
     } catch (error) {
       console.error('Error unlocking achievement:', error);

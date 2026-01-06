@@ -4,8 +4,12 @@ import { UserActivityController } from './user-activity.controller';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { AchievementsService } from '../achievement/achievement.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
+  imports: [
+    NotificationsModule, // 2. Добавляем в imports
+  ],
   controllers: [UserActivityController],
   providers: [
     UserActivityService,

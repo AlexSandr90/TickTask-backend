@@ -13,7 +13,6 @@ import { AssignTaskDto } from './dto/assign-task.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
-
 type AnalyticsUpdate = {
   totalBoards?: { increment?: number; decrement?: number; set?: number };
   totalColumns?: { increment?: number; decrement?: number; set?: number };

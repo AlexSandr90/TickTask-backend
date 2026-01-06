@@ -9,7 +9,7 @@ async function bootstrap() {
 
   try {
     const deadlineChecker = app.get(DeadlineCheckerService);
-    await deadlineChecker.testNotificationsNow();
+    await deadlineChecker.testNotificationsNow(); // 👈 ДОБАВЬ await
     console.log('\n✅ Проверка успешно завершена');
   } catch (error) {
     console.error('❌ Ошибка при проверке:', error);
