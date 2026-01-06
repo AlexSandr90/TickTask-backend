@@ -68,12 +68,28 @@ export class NotificationsService {
   }
 
   async getUserNotifications(userId: string, limit = 50, offset = 0) {
-    return this.prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
-    });
+    // ✅ Запрашиваем всё параллельно для производительности
+    const [notifications, total, unreadCount] = await Promise.all([
+      this.prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.notification.count({
+        where: { userId },
+      }),
+      this.prisma.notification.count({
+        where: { userId, isRead: false },
+      }),
+    ]);
+
+    // ✅ Возвращаем объект с полной информацией
+    return {
+      notifications,
+      total,
+      unreadCount,
+    };
   }
 
   async getUnreadCount(userId: string) {
