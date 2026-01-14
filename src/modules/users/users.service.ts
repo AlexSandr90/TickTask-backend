@@ -393,7 +393,7 @@ export class UsersService {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: isProduction,
-      maxAge: Number(AUTH_CONFIG.expireJwt),
+      maxAge: Number(AUTH_CONFIG.expireJwt) * 1000,
       path: '/',
       sameSite: isProduction ? 'none' : 'lax',
       domain: isProduction ? 'taskcraft.click' : undefined,
@@ -402,7 +402,7 @@ export class UsersService {
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      maxAge: Number(AUTH_CONFIG.expireJwtRefresh),
+      maxAge: Number(AUTH_CONFIG.expireJwtRefresh) * 1000,
       path: '/',
       sameSite: isProduction ? 'none' : 'lax',
       domain: isProduction ? 'taskcraft.click' : undefined,
