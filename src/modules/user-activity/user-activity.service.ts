@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import dayjs from 'dayjs';
@@ -89,12 +89,19 @@ export class UserActivityService {
   ): Promise<UserActivityDto> {
     try {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new Error(`User ${userId} not found`);
+      if (!user) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
 
-      const analytics = await this.prisma.userAnalytics.findUnique({
+      // ✅ Используем AnalyticsService - он создаст analytics если нет
+      let analytics = await this.prisma.userAnalytics.findUnique({
         where: { userId },
       });
-      if (!analytics) throw new Error(`Analytics for user ${userId} not found`);
+
+      // Если analytics нет - создаём через сервис
+      if (!analytics) {
+        analytics = await this.analyticsService.updateAnalytics(userId, {});
+      }
 
       const now = new Date();
       const today = dayjs().startOf('day');
@@ -169,20 +176,31 @@ export class UserActivityService {
         totalMinutes,
       };
     } catch (err: unknown) {
-      if (retry < 3)
+      // Не повторяем, если это NotFoundException
+      if (err instanceof NotFoundException) {
+        throw err;
+      }
+
+      if (retry < 3) {
         return this.updateUserActivity(userId, secondsToAdd, retry + 1);
+      }
+
       if (err instanceof Error) throw err;
       throw new Error('Unknown error updating user activity');
     }
   }
 
+  // ✅ ИСПРАВЛЕННЫЙ МЕТОД
   async getUserActivityStatus(userId: string): Promise<UserActivityDto> {
-    const analytics = await this.prisma.userAnalytics.findUnique({
-      where: { userId },
-    });
+    // Проверяем пользователя
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    if (!analytics || !user) throw new Error('User or analytics not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // ✅ Получаем или создаём analytics через сервис
+    const analytics = await this.analyticsService.updateAnalytics(userId, {});
 
     const totalMinutes = Math.floor(Number(analytics.totalTimeSpent) / 60);
 
@@ -195,9 +213,9 @@ export class UserActivityService {
       ),
       motivationalMessage: this.getMotivationalMessage(totalMinutes),
       timeBreakdown: this.calculateTimeBreakdown(totalMinutes),
-      totalHours: Math.floor(totalMinutes / 60), // добавлено
-      totalMinutes, // добавлено
-      lastHeartbeat: analytics.lastHeartbeat ?? undefined, // если нужно
+      totalHours: Math.floor(totalMinutes / 60),
+      totalMinutes,
+      lastHeartbeat: analytics.lastHeartbeat ?? undefined,
     };
   }
 }

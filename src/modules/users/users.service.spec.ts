@@ -42,12 +42,17 @@ const mockUser: User = {
   updatedAt: new Date(),
   lastLogin: null,
   theme: 'light',
-  notifications: true,
+  language: 'en',
   refreshToken: null,
   googleId: null,
   passwordResetToken: null,
   avatarPath: null,
-} as User;
+  timezone: 'UTC',
+  emailChangeToken: null,
+  pendingEmail: null,
+  currentStreak: 0,
+  longestStreak: 0,
+};
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -83,9 +88,10 @@ describe('UsersService', () => {
         updatedAt: mockUser.updatedAt,
         lastLogin: mockUser.lastLogin,
         theme: mockUser.theme,
-        notifications: mockUser.notifications,
+        language: mockUser.language,
         refreshToken: mockUser.refreshToken,
         avatarPath: mockUser.avatarPath,
+        timezone: mockUser.timezone,
       });
 
       expect(repository.findByEmail).toHaveBeenCalledWith(mockUser.email);
@@ -151,10 +157,11 @@ describe('UsersService', () => {
         updatedAt: mockUser.updatedAt,
         lastLogin: mockUser.lastLogin,
         theme: mockUser.theme,
-        notifications: mockUser.notifications,
+        language: mockUser.language,
         avatarPath: mockUser.avatarPath,
         googleId: mockUser.googleId,
         passwordResetToken: mockUser.passwordResetToken,
+        timezone: mockUser.timezone,
       });
 
       expect(repository.updateUser).toHaveBeenCalledWith('test-id', updateDto);

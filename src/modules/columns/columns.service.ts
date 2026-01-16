@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ColumnsRepository } from './columns.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { AchievementsService } from '../achievement/achievement.service';
 
 @Injectable()
 export class ColumnsService {
@@ -9,6 +10,7 @@ export class ColumnsService {
     private readonly columnRepository: ColumnsRepository,
     private readonly analyticsService: AnalyticsService,
     private readonly prisma: PrismaService,
+    private readonly achievementsService: AchievementsService, // ✅ Добавляем
   ) {}
 
   async getAllColumns(boardId: string) {
@@ -26,10 +28,10 @@ export class ColumnsService {
     const column = await this.prisma.$transaction(async (tx) => {
       const boardStartTime = Date.now();
 
-      // 1️⃣ Проверка доступа к доске (только нужное поле)
+      // 1️⃣ Проверка доступа к доске
       const board = await tx.board.findUnique({
         where: { id: boardId },
-        select: { userId: true }, // ✅ Только userId, не все поля
+        select: { userId: true },
       });
 
       if (!board) {
@@ -40,11 +42,11 @@ export class ColumnsService {
 
       const columnStartTime = Date.now();
 
-      // 2️⃣ Вычисляем позицию (быстро благодаря индексу)
+      // 2️⃣ Вычисляем позицию
       const lastColumn = await tx.column.findFirst({
         where: { boardId },
         orderBy: { position: 'desc' },
-        select: { position: true }, // ✅ Только position
+        select: { position: true },
       });
       const finalPosition = (lastColumn?.position || 0) + 1000;
 
@@ -87,6 +89,12 @@ export class ColumnsService {
     });
 
     console.log(`✅ Total createColumn time: ${Date.now() - startTime}ms`);
+
+    // ✅ 5️⃣ Проверяем достижение ПОСЛЕ создания колонки
+    // Используем .catch() чтобы не блокировать ответ
+    this.achievementsService
+      .checkFirstColumnAchievement(userId)
+      .catch((err) => console.error('Achievement check error:', err));
 
     return column;
   }

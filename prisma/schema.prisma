@@ -9,34 +9,37 @@ datasource db {
 }
 
 model User {
-  id                  String            @id @default(uuid())
-  username            String
-  email               String            @unique
-  passwordHash        String?
-  createdAt           DateTime          @default(now())
-  lastLogin           DateTime?
-  theme               String            @default("light")
-  notifications       Boolean           @default(true)
-  refreshToken        String?
-  updatedAt           DateTime          @updatedAt
-  isActive            Boolean           @default(false)
-  googleId            String?           @unique
-  passwordResetToken  String?
-  avatarPath          String?
-  timezone            String            @default("UTC")
-  emailChangeToken    String?
-  pendingEmail        String?
-  currentStreak       Int               @default(0)
-  longestStreak       Int               @default(0)
-  boards              Board[]
-  receivedInvitations BoardInvitation[] @relation("InvitationReceiver")
-  sentInvitations     BoardInvitation[] @relation("InvitationSender")
-  boardsMembers       BoardMember[]
-  createdTasks        Task[]            @relation("TaskCreator")
-  assignedTasks       Task[]            @relation("TaskAssignee")
-  Task                Task[]
-  UserAchievement     UserAchievement[]
-  UserAnalytics       UserAnalytics?
+  id                   String                @id @default(uuid())
+  username             String
+  email                String                @unique
+  passwordHash         String?
+  createdAt            DateTime              @default(now())
+  lastLogin            DateTime?
+  theme                String                @default("light")
+  refreshToken         String?
+  updatedAt            DateTime              @updatedAt
+  isActive             Boolean               @default(false)
+  googleId             String?               @unique
+  passwordResetToken   String?
+  avatarPath           String?
+  timezone             String                @default("UTC")
+  emailChangeToken     String?
+  pendingEmail         String?
+  currentStreak        Int                   @default(0)
+  longestStreak        Int                   @default(0)
+  language             String                @default("en")
+  boards               Board[]
+  receivedInvitations  BoardInvitation[]     @relation("InvitationReceiver")
+  sentInvitations      BoardInvitation[]     @relation("InvitationSender")
+  boardsMembers        BoardMember[]
+  deviceTokens         DeviceToken[]
+  notifications        Notification[]
+  notificationSettings NotificationSettings?
+  assignedTasks        Task[]                @relation("TaskAssignee")
+  Task                 Task[]
+  UserAchievement      UserAchievement[]
+  UserAnalytics        UserAnalytics?
+  createdTasks         Task[]                @relation("TaskCreator")
 }
 
 model Board {
@@ -115,13 +118,13 @@ model Task {
   priority    Int       @default(1)
   tags        String[]
   userId      String?
-  assigneeId  String?
   deadline    DateTime?
   isCompleted Boolean   @default(false)
-
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
   column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
   user        User?     @relation(fields: [userId], references: [id])
-  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  User        User[]    @relation("TaskCreator")
 
   @@index([columnId])
   @@index([userId])
@@ -129,7 +132,6 @@ model Task {
   @@index([isCompleted])
   @@index([columnId, position])
   @@index([assigneeId])
-  User User[] @relation("TaskCreator")
 }
 
 model UserAnalytics {
@@ -174,6 +176,91 @@ model UserAchievement {
   @@unique([userId, achievementId])
 }
 
+model Notification {
+  id             String           @id @default(uuid())
+  userId         String
+  title          String
+  message        String
+  isRead         Boolean          @default(false)
+  relatedTaskId  String?
+  relatedBoardId String?
+  relatedUserId  String?
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+  readAt         DateTime?
+  type           NotificationType
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+model NotificationSettings {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  pushEnabled         Boolean  @default(true)
+  emailEnabled        Boolean  @default(false)
+  inAppEnabled        Boolean  @default(true)
+  taskAssigned        Boolean  @default(true)
+  taskDeadlineSoon    Boolean  @default(true)
+  taskOverdue         Boolean  @default(true)
+  taskCompleted       Boolean  @default(true)
+  taskCommented       Boolean  @default(true)
+  taskPriorityChanged Boolean  @default(false)
+  boardInvitation     Boolean  @default(true)
+  boardRemoved        Boolean  @default(true)
+  boardRoleChanged    Boolean  @default(true)
+  boardDeleted        Boolean  @default(true)
+  newBoardMember      Boolean  @default(false)
+  achievementUnlocked Boolean  @default(true)
+  streakMilestone     Boolean  @default(true)
+  quietHoursEnabled   Boolean  @default(false)
+  quietHoursStart     String?
+  quietHoursEnd       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  isActive  Boolean  @default(true)
+  deviceId  String?
+  lastUsed  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  platform  Platform
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([token])
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DEADLINE_SOON
+  TASK_OVERDUE
+  TASK_COMPLETED
+  TASK_COMMENTED
+  TASK_PRIORITY_CHANGED
+  BOARD_INVITATION
+  BOARD_REMOVED
+  BOARD_ROLE_CHANGED
+  BOARD_DELETED
+  NEW_BOARD_MEMBER
+  ACHIEVEMENT_UNLOCKED
+  STREAK_MILESTONE
+}
+
+enum Platform {
+  WEB
+  IOS
+  ANDROID
+}
+
 enum BoardRole {
   OWNER
   ADMIN
@@ -185,4 +272,5 @@ enum InvitationStatus {
   ACCEPTED
   DECLINED
   EXPIRED
+  REJECTED
 }

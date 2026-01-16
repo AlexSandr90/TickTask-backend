@@ -30,9 +30,6 @@ export class UpdateUserDto {
     description: 'User notification',
     example: false,
   })
-  @IsOptional()
-  @IsBoolean()
-  notifications?: boolean;
 
   @ApiPropertyOptional({
     description: 'Is user activated his account',

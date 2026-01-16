@@ -17,7 +17,9 @@ export function generateJwtToken(email: string, sub: string) {
   }
 
   const payload = { email, sub };
-  return jwt.sign(payload, secretJWT, { expiresIn: '10d' });
+  return jwt.sign(payload, secretJWT, {
+    expiresIn: AUTH_CONFIG.expireJwt || 86400,
+  });
 }
 
 export function verifyJwtToken(token: string): JwtPayload {

@@ -6,7 +6,6 @@ export interface UserWithoutPassword {
   updatedAt: Date;
   lastLogin: Date | null;
   theme: string;
-  notifications: boolean;
   isActive: boolean;
 }
 
