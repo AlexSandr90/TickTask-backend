@@ -26,12 +26,10 @@ npm run start:dev
 
 
 ##  📁 Tech Stack
-text
 Nest.js 10+ | Prisma ORM | PostgreSQL 16
 JWT/Clerk | Swagger | Jest | class-validator
 
 ##  🏗️ Architecture (80% mine)
-text
 src/
 ├── auth/ (guards, strategies)
 ├── tasks/ (CRUD controllers/services)
