@@ -4,7 +4,7 @@
 
 ## ✨ Features
 - **REST API**: Users, Auth, Tasks (full CRUD)
-- **Authentication**: JWT + token refresh (Clerk integration)
+- **Authentication**: JWT + token refresh
 - **Database**: PostgreSQL + Prisma ORM (migrations)
 - **Validation**: class-validator + class-transformer
 - **Docs**: Swagger UI (`/api`)
