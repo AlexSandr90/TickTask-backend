@@ -19,15 +19,6 @@ Backend API: https://api.taskcraft.click (Swagger: /api)
 Nest.js 10+ | Prisma ORM | PostgreSQL 16
 JWT/Clerk | Swagger | Jest | class-validator
 
-## 🏗️ Architecture (80% mine)
-```bash
-src/
-├── auth/ (guards, strategies)
-├── tasks/ (CRUD controllers/services)
-├── users/ (modules)
-└── common/ (pipes, decorators)
-
-```
 
 ## 🚀 Quick Start
 ```bash
