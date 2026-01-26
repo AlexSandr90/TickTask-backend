@@ -20,11 +20,14 @@ Nest.js 10+ | Prisma ORM | PostgreSQL 16
 JWT/Clerk | Swagger | Jest | class-validator
 
 ## 🏗️ Architecture (80% mine)
+```bash
 src/
 ├── auth/ (guards, strategies)
 ├── tasks/ (CRUD controllers/services)
 ├── users/ (modules)
 └── common/ (pipes, decorators)
+
+```
 
 ## 🚀 Quick Start
 ```bash
@@ -34,3 +37,5 @@ npm install
 cp .env.example .env  # PostgreSQL config
 npm run db:migrate
 npm run start:dev
+
+```
